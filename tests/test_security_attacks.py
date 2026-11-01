@@ -253,7 +253,7 @@ def test_sqlite_sql_injection_payload_in_filename(tmp_path: Path):
     file_path.write_text("test pdf content")
 
     rules = [RuleConfig(**r) for r in DEFAULT_RULES]
-    config = AppConfig(rules=rules, downloads_dir=str(downloads))
+    config = AppConfig(rules=rules, downloads_dir=str(downloads), min_file_age_seconds=0)
     db_path = tmp_path / "sqli_test.db"
     history_db = HistoryDB(db_path=db_path)
     organizer = Organizer(config=config, history_db=history_db)
@@ -283,7 +283,7 @@ def test_undo_refuses_restoring_modified_file(tmp_path: Path):
     test_file.write_text("authentic original content")
 
     rules = [RuleConfig(**r) for r in DEFAULT_RULES]
-    config = AppConfig(rules=rules, downloads_dir=str(downloads))
+    config = AppConfig(rules=rules, downloads_dir=str(downloads), min_file_age_seconds=0)
     db_path = tmp_path / "tamper_test.db"
     history_db = HistoryDB(db_path=db_path)
     organizer = Organizer(config=config, history_db=history_db)

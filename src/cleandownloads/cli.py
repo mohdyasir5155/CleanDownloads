@@ -218,6 +218,10 @@ def cmd_preview(config_mgr: ConfigManager, json_mode: bool = False) -> None:
                 }
                 for m in plan.planned_moves
             ],
+            "skipped_files": [
+                {"path": str(sf.path), "reason": sf.reason}
+                for sf in res.skipped_files
+            ],
         }
         print(json.dumps(data, indent=2))
         return
@@ -546,6 +550,9 @@ def build_parser() -> argparse.ArgumentParser:
     common_parser.add_argument(
         "-d", "--downloads-dir", type=str, default=argparse.SUPPRESS, help="Override target Downloads directory"
     )
+    common_parser.add_argument(
+        "--min-age", type=int, default=argparse.SUPPRESS, help="Minimum file age in seconds before moving (default: 300)"
+    )
 
     parser = argparse.ArgumentParser(
         prog="cleandownloads",
@@ -618,6 +625,8 @@ def main() -> None:
     config_mgr = ConfigManager()
     if getattr(args, "downloads_dir", None):
         config_mgr.config.downloads_dir = str(Path(args.downloads_dir).resolve())
+    if hasattr(args, "min_age"):
+        config_mgr.config.min_file_age_seconds = max(0, args.min_age)
     history_db = HistoryDB()
 
     if not args.command:

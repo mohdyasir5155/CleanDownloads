@@ -266,6 +266,7 @@ cleandownloads config --reset
 | :--- | :--- | :--- | :--- |
 | `downloads_dir` | string | `null` | Target directory (defaults to user's Windows Downloads path) |
 | `recursive` | boolean | `false` | Scan subdirectories (`false` keeps nested folders untouched) |
+| `min_file_age_seconds` | integer | `300` | Minimum file age in seconds before organizing (skips files modified <300s ago) |
 | `conflict_strategy` | string | `"rename"` | Conflict strategy: automatically adds `(1)`, `(2)` suffix |
 | `ignored_extensions` | list | `[ "crdownload", "part", "tmp", ... ]` | In-progress extensions to skip unconditionally |
 | `excluded_directories`| list | `[ "Documents", "Images", ... ]` | Category directories ignored during root scan |

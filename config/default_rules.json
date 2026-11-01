@@ -2,6 +2,7 @@
   "version": "1.0.0",
   "downloads_dir": null,
   "recursive": false,
+  "min_file_age_seconds": 300,
   "min_file_size_bytes": 0,
   "max_file_size_bytes": null,
   "conflict_strategy": "rename",

@@ -52,7 +52,7 @@ def test_concurrent_organize_refused(tmp_path: Path, monkeypatch):
     (downloads / "doc.pdf").write_text("sample")
 
     rules = [RuleConfig(**r) for r in DEFAULT_RULES]
-    config = AppConfig(rules=rules, downloads_dir=str(downloads))
+    config = AppConfig(rules=rules, downloads_dir=str(downloads), min_file_age_seconds=0)
     history_db = HistoryDB(db_path=tmp_path / "hist.db")
     organizer = Organizer(config=config, history_db=history_db, lock=lock2)
 

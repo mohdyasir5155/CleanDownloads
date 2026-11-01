@@ -20,7 +20,7 @@ def test_setup(tmp_path: Path):
     (downloads / "tool.exe").write_text("exe content")
 
     rules = [RuleConfig(**r) for r in DEFAULT_RULES]
-    config = AppConfig(rules=rules, downloads_dir=str(downloads))
+    config = AppConfig(rules=rules, downloads_dir=str(downloads), min_file_age_seconds=0)
     db_path = tmp_path / "test_history.db"
     history_db = HistoryDB(db_path=db_path)
 
@@ -97,7 +97,7 @@ def test_collision_safe_organize(tmp_path: Path):
     existing_file.write_text("old notes")
 
     rules = [RuleConfig(**r) for r in DEFAULT_RULES]
-    config = AppConfig(rules=rules, downloads_dir=str(downloads))
+    config = AppConfig(rules=rules, downloads_dir=str(downloads), min_file_age_seconds=0)
     history_db = HistoryDB(db_path=tmp_path / "hist.db")
     organizer = Organizer(config=config, history_db=history_db)
 
@@ -123,7 +123,7 @@ def test_organize_and_undo_double_dot_filename(tmp_path: Path):
     file_path.write_text("quarterly report content")
 
     rules = [RuleConfig(**r) for r in DEFAULT_RULES]
-    config = AppConfig(rules=rules, downloads_dir=str(downloads))
+    config = AppConfig(rules=rules, downloads_dir=str(downloads), min_file_age_seconds=0)
     history_db = HistoryDB(db_path=tmp_path / "hist_doubledot.db")
     organizer = Organizer(config=config, history_db=history_db)
 

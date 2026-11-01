@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -216,15 +217,24 @@ class Scanner:
             )
             return
 
-        # 5. File size filters
+        # 5. File size and age filters
         try:
             stat = file_path.stat()
             size = stat.st_size
+            mtime = stat.st_mtime
         except OSError:
             result.skipped_files.append(
                 SkippedFile(path=file_path, reason="stat_error")
             )
             return
+
+        # Minimum file age check (skips files modified within min_file_age_seconds)
+        if self.config.min_file_age_seconds > 0:
+            if (time.time() - mtime) < self.config.min_file_age_seconds:
+                result.skipped_files.append(
+                    SkippedFile(path=file_path, reason="too_new")
+                )
+                return
 
         if self.config.min_file_size_bytes > 0 and size < self.config.min_file_size_bytes:
             result.skipped_files.append(

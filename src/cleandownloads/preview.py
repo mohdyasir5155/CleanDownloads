@@ -28,6 +28,16 @@ def format_preview(scan_result: ScanResult, max_display: int | None = None) -> s
     if ready_count == 0:
         lines.append("  Downloads folder is already organized! No eligible files to move.")
         lines.append("")
+        if scan_result.skipped_files:
+            lines.append("SKIPPED FILES")
+            lines.append("─" * 32)
+            reasons: dict[str, int] = {}
+            for sf in scan_result.skipped_files:
+                reasons[sf.reason] = reasons.get(sf.reason, 0) + 1
+            for reason, count in sorted(reasons.items()):
+                lines.append(f"  {reason:<18} {count:>5}")
+            lines.append("─" * 32)
+            lines.append("")
         return "\n".join(lines)
 
     display_files = scan_result.ready_files
@@ -59,5 +69,17 @@ def format_preview(scan_result: ScanResult, max_display: int | None = None) -> s
     lines.append("─" * 32)
     lines.append(f"  {'Total':<18} {ready_count:>5} ({format_file_size(scan_result.total_ready_bytes)})")
     lines.append("")
+
+    if scan_result.skipped_files:
+        lines.append("SKIPPED FILES")
+        lines.append("─" * 32)
+        reasons = {}
+        for sf in scan_result.skipped_files:
+            reasons[sf.reason] = reasons.get(sf.reason, 0) + 1
+        for reason, count in sorted(reasons.items()):
+            lines.append(f"  {reason:<18} {count:>5}")
+        lines.append("─" * 32)
+        lines.append("")
+
     lines.append("No files have been moved yet.")
     return "\n".join(lines)

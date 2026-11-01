@@ -19,7 +19,7 @@ def organized_setup(tmp_path: Path):
     (downloads / "avatar.png").write_text("my avatar")
 
     rules = [RuleConfig(**r) for r in DEFAULT_RULES]
-    config = AppConfig(rules=rules, downloads_dir=str(downloads))
+    config = AppConfig(rules=rules, downloads_dir=str(downloads), min_file_age_seconds=0)
     history_db = HistoryDB(db_path=tmp_path / "undo_test.db")
     organizer = Organizer(config=config, history_db=history_db)
 

@@ -119,6 +119,7 @@ class AppConfig:
     version: str = "1.0.0"
     downloads_dir: str | None = None
     recursive: bool = False
+    min_file_age_seconds: int = 300
     min_file_size_bytes: int = 0
     max_file_size_bytes: int | None = None
     conflict_strategy: str = "rename"
@@ -370,6 +371,7 @@ class ConfigManager:
             version=str(data.get("version", "1.0.0")),
             downloads_dir=validated_dl,
             recursive=bool(data.get("recursive", False)),
+            min_file_age_seconds=max(0, int(data.get("min_file_age_seconds", 300))),
             min_file_size_bytes=max(0, int(data.get("min_file_size_bytes", 0))),
             max_file_size_bytes=(
                 max(0, int(data["max_file_size_bytes"]))
