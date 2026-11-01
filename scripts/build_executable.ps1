@@ -1,6 +1,7 @@
 # Reproducible Standalone Executable Build Script for CleanDownloads
 param(
-    [string]$OutputDir = (Join-Path $PSScriptRoot "..\dist")
+    [string]$OutputDir = (Join-Path $PSScriptRoot "..\dist"),
+    [string]$Version = "1.0.0"
 )
 
 $ErrorActionPreference = "Stop"

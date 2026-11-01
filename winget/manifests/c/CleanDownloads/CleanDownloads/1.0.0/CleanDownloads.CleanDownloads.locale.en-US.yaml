@@ -4,15 +4,15 @@ PackageIdentifier: CleanDownloads.CleanDownloads
 PackageVersion: 1.0.0
 PackageLocale: en-US
 Publisher: CleanDownloads
-PublisherUrl: https://github.com/cleandownloads/CleanDownloads
-PublisherSupportUrl: https://github.com/cleandownloads/CleanDownloads/issues
+PublisherUrl: https://github.com/mohdyasir5155/CleanDownloads
+PublisherSupportUrl: https://github.com/mohdyasir5155/CleanDownloads/issues
 Author: CleanDownloads
 PackageName: CleanDownloads
-PackageUrl: https://github.com/cleandownloads/CleanDownloads
+PackageUrl: https://github.com/mohdyasir5155/CleanDownloads
 License: MIT
-LicenseUrl: https://github.com/cleandownloads/CleanDownloads/blob/main/LICENSE
+LicenseUrl: https://github.com/mohdyasir5155/CleanDownloads/blob/main/LICENSE
 Copyright: Copyright (c) 2026 CleanDownloads
-CopyrightUrl: https://github.com/cleandownloads/CleanDownloads/blob/main/LICENSE
+CopyrightUrl: https://github.com/mohdyasir5155/CleanDownloads/blob/main/LICENSE
 ShortDescription: One command. Zero clutter. Smart, safe, and automated Windows Downloads organizer.
 Description: |
   CleanDownloads is a lightweight, secure Windows CLI tool designed to keep your Downloads folder organized automatically.
@@ -29,11 +29,11 @@ Tags:
   - python
   - utility
   - windows
-ReleaseNotesUrl: https://github.com/cleandownloads/CleanDownloads/releases/tag/v1.0.0
+ReleaseNotesUrl: https://github.com/mohdyasir5155/CleanDownloads/releases/tag/v1.0.0
 PurchaseUrl: ""
 InstallationNotes: Run 'cleandownloads --help' to get started. CleanDownloads installs to user AppData and requires no administrator privileges.
 Documentations:
   - DocumentLabel: Documentation
-    DocumentUrl: https://github.com/cleandownloads/CleanDownloads#readme
+    DocumentUrl: https://github.com/mohdyasir5155/CleanDownloads#readme
 ManifestType: defaultLocale
 ManifestVersion: 1.6.0

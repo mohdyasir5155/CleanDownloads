@@ -21,7 +21,7 @@ Protocols: []
 ReleaseDate: 2026-11-01
 Installers:
   - Architecture: x64
-    InstallerUrl: https://github.com/cleandownloads/CleanDownloads/releases/download/v1.0.0/CleanDownloads-Setup-1.0.0.exe
+    InstallerUrl: https://github.com/mohdyasir5155/CleanDownloads/releases/download/v1.0.0/CleanDownloads-Setup-1.0.0.exe
     InstallerSha256: AE970B3BF14A1CC74CDC9DE74583CB85DA8558F5621F3138C4298B6FD5872D56
     ProductCode: '{9B560C62-E764-4FD3-909E-D6A7862E8F48}_is1'
 ManifestType: installer
