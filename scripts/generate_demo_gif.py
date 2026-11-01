@@ -1,6 +1,7 @@
 """Generate an authentic animated demo GIF of CleanDownloads CLI in action."""
 
 from pathlib import Path
+
 from PIL import Image, ImageDraw, ImageFont
 
 repo_root = Path(__file__).parent.parent

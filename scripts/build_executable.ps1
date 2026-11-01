@@ -11,10 +11,16 @@ Write-Host " CleanDownloads - Standalone Windows x64 Executable Builder"
 Write-Host "================================================================="
 
 $repoRoot = (Get-Item $PSScriptRoot).Parent.FullName
-$pyinstallerExe = Join-Path $repoRoot ".venv\Scripts\pyinstaller.exe"
+$pyinstallerExe = (Get-Command pyinstaller.exe -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -ErrorAction SilentlyContinue)
+if (-not $pyinstallerExe) {
+    $venvExe = Join-Path $repoRoot ".venv\Scripts\pyinstaller.exe"
+    if (Test-Path $venvExe) {
+        $pyinstallerExe = $venvExe
+    }
+}
 
-if (-not (Test-Path $pyinstallerExe)) {
-    throw "PyInstaller not found in .venv! Run: .venv\Scripts\pip.exe install pyinstaller"
+if (-not $pyinstallerExe -or -not (Test-Path $pyinstallerExe)) {
+    throw "PyInstaller executable not found! Install with: pip install pyinstaller"
 }
 
 # 1. Clean prior build artifacts
