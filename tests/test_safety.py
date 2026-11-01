@@ -1,5 +1,7 @@
 """Tests for safety invariants and security validation."""
 
+import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -139,4 +141,57 @@ def test_validate_safe_filename_rejects_unsafe_names(filename: str):
     """Verify unsafe filenames, devices, ADS, and trailing dots/spaces are rejected."""
     with pytest.raises(SafetyViolationError):
         validate_safe_filename(filename)
+
+
+def test_atomic_collision_safe_move_posix_branch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """Test the POSIX link/unlink branch and collision renaming in atomic_collision_safe_move."""
+    from cleandownloads.safety import atomic_collision_safe_move
+
+    monkeypatch.setattr(sys, "platform", "linux")
+
+    source = tmp_path / "test.txt"
+    source.write_text("posix content", encoding="utf-8")
+    dest_dir = tmp_path / "dest"
+    dest_dir.mkdir()
+    target = dest_dir / "test.txt"
+
+    # Test normal link+unlink
+    final_dest, file_hash = atomic_collision_safe_move(source, target, boundary=tmp_path)
+    assert final_dest == target
+    assert not source.exists()
+    assert target.read_text(encoding="utf-8") == "posix content"
+
+    # Test collision avoidance under POSIX
+    source2 = tmp_path / "test.txt"
+    source2.write_text("posix content 2", encoding="utf-8")
+    final_dest2, _ = atomic_collision_safe_move(source2, target, boundary=tmp_path)
+    assert final_dest2 == dest_dir / "test (1).txt"
+    assert final_dest2.read_text(encoding="utf-8") == "posix content 2"
+    assert target.read_text(encoding="utf-8") == "posix content"
+
+
+def test_atomic_collision_safe_move_posix_exdev_fallback(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """Test EXDEV cross-device link fallback to exclusive-create copy."""
+    from cleandownloads.safety import atomic_collision_safe_move
+
+    monkeypatch.setattr(sys, "platform", "linux")
+
+    source = tmp_path / "cross.txt"
+    source.write_text("cross dev content", encoding="utf-8")
+    dest_dir = tmp_path / "dest2"
+    dest_dir.mkdir()
+    target = dest_dir / "cross.txt"
+
+    def mock_link(src, dst):
+        err = OSError("Invalid cross-device link")
+        err.errno = 18  # EXDEV
+        raise err
+
+    monkeypatch.setattr(os, "link", mock_link)
+
+    final_dest, _ = atomic_collision_safe_move(source, target, boundary=tmp_path)
+    assert final_dest == target
+    assert not source.exists()
+    assert target.read_text(encoding="utf-8") == "cross dev content"
+
 

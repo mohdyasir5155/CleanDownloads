@@ -17,7 +17,7 @@ The application is now distributable via three distinct distribution channels:
 2. **Secure PowerShell Bootstrapper (`install.ps1`):** One-liner HTTPS installation with SHA-256 checksum and Authenticode digital signature verification.
 3. **Microsoft WinGet Community Repository:** Validated multi-file YAML manifests (`CleanDownloads.CleanDownloads`) conforming to WinGet Manifest Schema v1.6.0.
 
-All 14 strict safety invariants—including zero data loss in the Downloads folder and isolation of user state—remain guaranteed.
+All 14 strict safety invariants—including zero data loss in the Downloads folder and isolation of user state—remain enforced.
 
 ---
 

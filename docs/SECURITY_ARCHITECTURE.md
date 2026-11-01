@@ -58,9 +58,10 @@ CleanDownloads is architected around **defense-in-depth**, **least privilege**, 
                                          |
                                          v
 +------------------------------------------------------------------------------------+
-| Layer 1: Kernel-Level Filesystem Guarantees                                        |
-|  - Win32 MoveFileExW with MOVEFILE_COPY_ALLOWED (0x2)                              |
+| Layer 1: Filesystem Overwrite Protection                                           |
+|  - Win32 MoveFileExW with MOVEFILE_COPY_ALLOWED (0x2) on Windows                   |
 |  - Deliberate omission of MOVEFILE_REPLACE_EXISTING (0x1)                          |
+|  - POSIX atomic link/exclusive-create with O_CREAT | O_EXCL                        |
 |  - Non-destructive, bounded collision avoidance loop                              |
 |  - Post-move size and destination verification                                     |
 +------------------------------------------------------------------------------------+
@@ -70,14 +71,15 @@ CleanDownloads is architected around **defense-in-depth**, **least privilege**, 
 
 ## 3. Deep Dive into Critical Invariants
 
-### 3.1 Kernel-Level Zero-Overwrite Guarantee
+### 3.1 Zero-Overwrite Invariant
 Standard file-move implementations in high-level languages often invoke POSIX `rename()` or Windows `MoveFileEx` with the replace flag. In Python on Windows, `shutil.move()` internally calls `os.replace()`, which will silently overwrite an existing destination file on the same volume.
 
 CleanDownloads implements `atomic_collision_safe_move()` in `src/cleandownloads/safety.py`:
-- Direct invocation of Win32 `MoveFileExW(source, destination, MOVEFILE_COPY_ALLOWED)`.
-- The `MOVEFILE_REPLACE_EXISTING` flag (value `0x1`) is omitted.
-- If the destination already exists, Windows kernel atomically aborts the call and returns `ERROR_ALREADY_EXISTS` (183) or `ERROR_FILE_EXISTS` (80).
-- The algorithm catches these error codes and iterates to `filename (1).ext`, `filename (2).ext`, ensuring a collision cannot result in overwrite under race conditions.
+- On Windows: Direct invocation of Win32 `MoveFileExW(source, destination, MOVEFILE_COPY_ALLOWED)`.
+  - The `MOVEFILE_REPLACE_EXISTING` flag (value `0x1`) is omitted.
+  - If the destination already exists, Windows returns `ERROR_ALREADY_EXISTS` (183) or `ERROR_FILE_EXISTS` (80).
+  - The algorithm catches these error codes and iterates to `filename (1).ext`, `filename (2).ext`, ensuring a collision cannot result in overwrite under race conditions.
+- On POSIX: `os.link(source, target)` followed by `os.unlink(source)` (or `os.open` with `O_CREAT | O_EXCL` cross-filesystem), ensuring atomic failure if the target exists.
 
 ### 3.2 Reparse Points & Directory Junctions
 On NTFS, directory junctions and symlinks carry the reparse point attribute:
@@ -92,14 +94,15 @@ Incoming filenames are validated with `validate_safe_filename()`:
 - NTFS Alternate Data Streams (`:`) are rejected.
 - Windows reserved device names (`CON`, `PRN`, `AUX`, `NUL`, `COM1-9`, `LPT1-9`) are rejected regardless of file extension (e.g. `CON.txt` or `nul.pdf`).
 
-### 3.4 Cryptographic Undo Integrity
+### 3.4 Hash-Verified Undo Accidental Modification Detection
 When a file is organized:
-- CleanDownloads computes the SHA-256 hash in 64 KB chunks prior to moving.
+- CleanDownloads computes the SHA-256 hash prior to moving.
 - The hash is logged in `history.db` within the `operations` table.
 - When an `undo` operation is requested:
   - The destination file's SHA-256 hash is recalculated.
-  - If the hash differs (indicating the file was modified or replaced by external software), the undo operation is refused to prevent unintended regressions.
-  - Distinguishes integrity verification from authentication.
+  - If the hash differs (indicating the file was modified or corrupted while organized), the undo operation is refused by default to prevent unintended regressions.
+  - Users can pass `--force-modified` with confirmation if they deliberately wish to restore altered files.
+  - **Integrity Boundary**: The SHA-256 hash in `history.db` detects accidental file modification and corruption. It is not tamper-proof against a malicious local attacker who directly modifies both the file and the local SQLite database.
 
 ### 3.5 Safe Subprocess Execution
 - All subprocess invocations use explicit argument arrays (e.g. `[schtasks_path, "/Query", ...]`).

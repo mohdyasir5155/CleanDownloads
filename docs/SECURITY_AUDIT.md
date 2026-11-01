@@ -54,7 +54,7 @@ All identified vulnerabilities have been remediated, verified with dedicated att
 - **Attack Scenario**: If a file arrived at the destination between collision calculation and move execution, `os.replace` would overwrite the existing user file without warning.
 - **Impact**: Permanent data loss of personal user files.
 - **Severity**: **High**
-- **Fix Applied**: Replaced move implementation on Windows with Win32 `MoveFileExW` using `MOVEFILE_COPY_ALLOWED (0x2)` while deliberately omitting `MOVEFILE_REPLACE_EXISTING (0x1)`. The Windows kernel atomically fails if the target exists (`ERROR_ALREADY_EXISTS` 183 / `ERROR_FILE_EXISTS` 80), allowing CleanDownloads to safely retry with incremented collision suffixes.
+- **Fix Applied**: Replaced move implementation on Windows with Win32 `MoveFileExW` using `MOVEFILE_COPY_ALLOWED (0x2)` while deliberately omitting `MOVEFILE_REPLACE_EXISTING (0x1)`. On POSIX systems, `os.link` and `os.open(..., O_CREAT | O_EXCL)` provide equivalent collision protection. The OS atomically fails if the target exists, allowing CleanDownloads to safely retry with incremented collision suffixes.
 - **Test Added**: `tests/test_security_attacks.py::test_zero_overwrite_guarantee`
 
 ### SEC-03: Local Binary Hijacking via `os.system("cls")`
@@ -108,7 +108,7 @@ All identified vulnerabilities have been remediated, verified with dedicated att
 - **Attack Scenario**: An attacker swaps an organized PDF with a malicious executable of the same name; running `cleandownloads undo` restores the malicious file into Downloads.
 - **Impact**: Restoration of untrusted or modified files.
 - **Severity**: **Medium**
-- **Fix Applied**: Implemented streaming SHA-256 calculation prior to moving, stored in `operations.file_hash`. Undo re-verifies the SHA-256 hash before restoring; mismatches are rejected with an explicit integrity failure.
+- **Fix Applied**: Implemented streaming SHA-256 calculation prior to moving, stored in `operations.file_hash`. Undo re-verifies the SHA-256 hash before restoring; mismatches are rejected by default with an explicit integrity failure (with `--force-modified` override available). Note: The hash in `history.db` detects accidental file modifications only and is not tamper-proof against direct SQLite database tampering.
 - **Test Added**: `tests/test_security_attacks.py::test_undo_refuses_restoring_modified_file`
 
 ### SEC-09: Configuration Denial of Service (DoS) & Traversal

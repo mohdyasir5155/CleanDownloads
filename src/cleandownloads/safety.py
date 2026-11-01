@@ -2,15 +2,15 @@
 
 Implements all 14 mandatory safety rules and defensive protections:
 1. Never permanently delete user files.
-2. Never overwrite files (kernel-level atomic collision-safe moves).
+2. Never overwrite files (atomic collision-safe moves via Win32 on Windows and link/exclusive-create on POSIX).
 3. Never execute downloaded files.
 4. Never move files outside permitted boundaries (canonical path traversal prevention).
 5. Always support preview mode.
 6. Validate source and destination paths immediately before moving.
 7. Handle locked and actively downloading files safely.
 8. Never require administrator access.
-9. Keep cryptographic history (SHA-256) of successful moves.
-10. Make undo reliable and tamper-resistant.
+9. Keep integrity history (SHA-256) of successful moves.
+10. Make undo reliable and verify file integrity before restoring.
 11. Do not follow symlinks, junctions, or reparse points escaping boundary.
 12. Do not organize incomplete / active downloads.
 13. Never silently discard errors.
@@ -582,7 +582,7 @@ def atomic_collision_safe_move(
 
         if sys.platform == "win32":
             # On Windows: use Win32 MoveFileExW with MOVEFILE_COPY_ALLOWED (0x2)
-            # Crucial: NO MOVEFILE_REPLACE_EXISTING flag! Kernel guarantees failure if target exists!
+            # Crucial: NO MOVEFILE_REPLACE_EXISTING flag! MoveFileExW fails if target exists, preventing overwrites.
             res = ctypes.windll.kernel32.MoveFileExW(
                 str(source), str(target), MOVEFILE_COPY_ALLOWED
             )
@@ -600,11 +600,36 @@ def atomic_collision_safe_move(
             else:
                 raise OSError(f"Windows MoveFileExW failed with error code: {err}")
         else:
-            # Unix / POSIX safe atomic move
+            # POSIX no-overwrite move:
+            # On POSIX, os.rename() replaces existing destinations, so we enforce no-overwrite via:
+            # 1. os.link(source, target) which fails atomically with FileExistsError if target exists.
+            #    If link succeeds, unlink the source. This guarantees no overwrite on the same filesystem.
+            # 2. If cross-filesystem (EXDEV), fall back to exclusive-create copy:
+            #    Open target with os.O_CREAT | os.O_EXCL | os.O_WRONLY (fails atomically if target exists).
+            #    Stream copy data from source to target, fsync, then unlink source.
             try:
-                # Use os.link then os.unlink for same-fs atomic creation without replace,
-                # or safe move with pre-verification
-                shutil.move(str(source), str(target))
+                try:
+                    os.link(str(source), str(target))
+                    os.unlink(str(source))
+                except OSError as e:
+                    # Check for EXDEV (cross-device link)
+                    if getattr(e, "errno", None) == 18:  # EXDEV
+                        flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
+                        if hasattr(os, "O_BINARY"):
+                            flags |= os.O_BINARY
+                        fd = os.open(str(target), flags, 0o644)
+                        try:
+                            with open(source, "rb") as src_f, open(fd, "wb", closefd=False) as dst_f:
+                                shutil.copyfileobj(src_f, dst_f)
+                                dst_f.flush()
+                                os.fsync(fd)
+                        finally:
+                            os.close(fd)
+                        os.unlink(str(source))
+                    elif isinstance(e, FileExistsError) or getattr(e, "errno", None) == 17:  # EEXIST
+                        raise FileExistsError(f"Target '{target}' already exists.") from e
+                    else:
+                        raise
                 _verify_moved_file(target, source_size)
                 return target, sha256_hash
             except FileExistsError:

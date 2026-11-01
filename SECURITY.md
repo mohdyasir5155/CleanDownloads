@@ -15,13 +15,13 @@ CleanDownloads operates directly upon files in your personal `Downloads` directo
 
 ## 2. Core Security & Data Integrity Invariants
 
-### 1. Zero Deletion Guarantee
+### 1. Zero Deletion Invariant
 CleanDownloads will **never** permanently delete user files. There is no code path or command that invokes unlinking or deleting user files.
 
-### 2. Kernel-Level Zero-Overwrite Guarantee
-Existing files are never overwritten. When destination names collide, CleanDownloads resolves collisions using Win32 `MoveFileExW` without the `MOVEFILE_REPLACE_EXISTING` flag, ensuring the Windows kernel rejects any move that would overwrite a destination, atomically resolving conflicts via incremented numbering (e.g., `file (1).pdf`, `file (2).pdf`).
+### 2. Zero-Overwrite Invariant
+Existing files are never overwritten. When destination names collide, CleanDownloads resolves collisions using Win32 `MoveFileExW` without the `MOVEFILE_REPLACE_EXISTING` flag on Windows (and atomic `os.link` / exclusive-create `O_CREAT | O_EXCL` on POSIX), atomically resolving conflicts via incremented numbering (e.g., `file (1).pdf`, `file (2).pdf`).
 
-### 3. Zero Execution Guarantee
+### 3. Zero Execution Invariant
 CleanDownloads **never** executes, runs, or spawns processes for downloaded files. Downloaded files are treated purely as passive data bytes.
 
 ### 4. Canonical Path Boundary Enforcement
@@ -36,8 +36,8 @@ NTFS directory junctions (`FILE_ATTRIBUTE_REPARSE_POINT 0x400`) and symlinks are
 ### 7. Active & Incomplete Download Protection
 Incomplete downloads (e.g., `.crdownload`, `.part`, `.tmp`, `.aria2`, `.opdownload`) and actively locked files (`ERROR_SHARING_VIOLATION` 32, `ERROR_LOCK_VIOLATION` 33) are detected and left untouched.
 
-### 8. Cryptographic Undo Integrity Verification
-Every organized file's SHA-256 hash is computed in 64 KB chunks and recorded in `history.db`. During `undo`, the file hash is re-verified before restoring to ensure the file was not altered or swapped while organized. Integrity checking is distinguished from cryptographic signature authentication.
+### 8. Hash-Verified Undo Accidental Modification Detection
+Every organized file's SHA-256 hash is computed in 64 KB chunks and recorded in `history.db`. During `undo`, the file hash is re-verified before restoring to detect whether the file was altered or corrupted while organized. If modified, `undo` refuses to restore by default (overridable with `--force-modified` after confirmation). Note: The SHA-256 hash in `history.db` detects accidental file modification only; it is not tamper-proof against deliberate local modifications of the database.
 
 ### 9. 100% Local Privacy (Zero Telemetry)
 All classification rules, metadata, and history are stored locally in `%LOCALAPPDATA%\CleanDownloads\history.db`. CleanDownloads sends **zero network requests** during normal operation and collects **zero telemetry or file metadata**.
@@ -51,7 +51,7 @@ CleanDownloads runs entirely in standard user space without requiring administra
 
 For detailed analysis, architectures, and audit reports, refer to:
 - [Threat Model](file:///docs/THREAT_MODEL.md) — Assets, trust boundaries, attacker profiles, and mitigation matrix.
-- [Security Architecture](file:///docs/SECURITY_ARCHITECTURE.md) — Defense-in-depth layers and kernel invariants.
+- [Security Architecture](file:///docs/SECURITY_ARCHITECTURE.md) — Defense-in-depth layers and safety invariants.
 - [Security Audit Report](file:///docs/SECURITY_AUDIT.md) — Comprehensive vulnerability audit, remediations, and test results.
 
 ---

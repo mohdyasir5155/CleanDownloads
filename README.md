@@ -12,8 +12,8 @@
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011%20(x64)-0078D6.svg?style=flat-square&logo=windows&logoColor=white)](https://github.com/mohdyasir5155/CleanDownloads)
 [![Python Version](https://img.shields.io/badge/python-3.11+-3776AB.svg?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](LICENSE)
-[![Tests Passing](https://img.shields.io/badge/tests-50%20passed-brightgreen.svg?style=flat-square)](tests/)
-[![Security Invariants](https://img.shields.io/badge/security-14%20invariants%20guaranteed-success.svg?style=flat-square)](SECURITY.md)
+[![CI](https://github.com/mohdyasir5155/CleanDownloads/actions/workflows/ci.yml/badge.svg)](https://github.com/mohdyasir5155/CleanDownloads/actions/workflows/ci.yml)
+[![Security Invariants](https://img.shields.io/badge/security-14%20safety%20invariants-success.svg?style=flat-square)](SECURITY.md)
 [![Privacy First](https://img.shields.io/badge/privacy-100%25%20offline-blueviolet.svg?style=flat-square)](SECURITY.md)
 
 <p align="center">
@@ -41,7 +41,7 @@
 
 Over weeks and months, your Windows `Downloads` folder becomes a digital graveyard of invoices, screenshots, installers, zip archives, and scripts. Manual cleanup takes time, while hasty deletions risk losing critical files. 
 
-**CleanDownloads** transforms chaos into order in a fraction of a second. It inspects your loose downloads, categorizes them according to clean file rules, previews every planned change, and safely relocates files with kernel-level overwrite protection and instant rollback support.
+**CleanDownloads** transforms chaos into order in a fraction of a second. It inspects your loose downloads, categorizes them according to clean file rules, previews every planned change, and safely relocates files with zero-overwrite protection and instant rollback support.
 
 <p align="center">
   <img src="assets/demo.gif" alt="CleanDownloads Terminal Demo" width="100%" />
@@ -62,9 +62,9 @@ irm https://raw.githubusercontent.com/mohdyasir5155/CleanDownloads/main/install.
 Every feature in CleanDownloads is engineered around **safety, speed, and privacy**:
 
 - **🎯 Automatic File Categorization**: Out-of-the-box recognition for 13+ standard categories and hundreds of file extensions (PDF, Word, Excel, PowerPoint, Images, Videos, Audio, Archives, Software, Code, Spreadsheets, Presentations, E-Books, and Fonts).
-- **🛡 Safe File Movement (Zero Overwrite Guarantee)**: Files are never silently overwritten. Colliding filenames are resolved automatically using incremental numbers (e.g., `invoice (1).pdf`) backed by kernel-level Win32 `MoveFileExW` guarantees.
+- **🛡 Safe File Movement (Zero Overwrite Invariant)**: Files are never silently overwritten. Colliding filenames are resolved automatically using incremental numbers (e.g., `invoice (1).pdf`) backed by Win32 `MoveFileExW` on Windows (and atomic link/exclusive-create on POSIX).
 - **🔍 Preview & Dry-Run Mode**: Inspect exactly which files will move and where they will go with `cleandownloads preview` or `cleandownloads organize --dry-run` before any file is touched.
-- **↩ 1-Click Cryptographic Undo**: Every file movement is logged to a local SQLite database (`%LOCALAPPDATA%\CleanDownloads\history.db`) along with its streaming SHA-256 hash. Undo your last operation anytime with `cleandownloads undo`.
+- **↩ 1-Click Hash-Verified Undo**: Every file movement is logged to a local SQLite database (`%LOCALAPPDATA%\CleanDownloads\history.db`) along with its streaming SHA-256 hash to detect accidental file modifications. Undo your last operation anytime with `cleandownloads undo`.
 - **⏳ Active Download & Lock Protection**: CleanDownloads detects incomplete downloads (`.crdownload`, `.part`, `.tmp`, `.opdownload`, `.aria2`) and files locked by running applications, skipping them safely until transfers complete.
 - **⏰ Automated Background Organization**: Optional Windows Task Scheduler integration (`cleandownloads schedule --enable hourly`) to maintain an immaculate folder hands-free.
 - **⚙ Fully Customizable Rules**: Configure custom categories, subfolders, ignored extensions, and size limits via a straightforward JSON configuration file.
@@ -278,15 +278,15 @@ cleandownloads config --reset
 
 CleanDownloads is built on defensive principles:
 
-- **Zero Deletion Guarantee**: CleanDownloads contains no deletion logic for user files. There is no `unlink`, `remove`, or purge command.
-- **Kernel-Level Overwrite Prevention**: Uses native Win32 `MoveFileExW` without `MOVEFILE_REPLACE_EXISTING`. Collisions are renamed atomically.
+- **Zero Deletion Invariant**: CleanDownloads contains no deletion logic for user files. There is no `unlink`, `remove`, or purge command.
+- **Zero-Overwrite Protection**: Uses native Win32 `MoveFileExW` without `MOVEFILE_REPLACE_EXISTING` on Windows (and atomic link / exclusive-create on POSIX). Collisions are renamed atomically.
 - **Path Traversal & Boundary Containment**: Enforces strict canonical path boundary checks. Relative paths (`..`), directory escapes, and Windows reserved device names (`CON`, `PRN`, `AUX`, `NUL`) are rejected immediately.
 - **In-Progress Download Protection**: Detects and leaves active browser downloads untouched.
-- **Cryptographic Hash Verification**: File movements record pre-move SHA-256 hashes. Restoring via `undo` verifies the file has not been modified or corrupted.
+- **Hash-Verified Accidental Modification Detection**: File movements record pre-move SHA-256 hashes in `history.db`. Restoring via `undo` verifies the file has not been accidentally modified or corrupted (overridable with `--force-modified` after confirmation). The local SQLite hash detects accidental modification only and is not tamper-proof against direct SQLite edits.
 - **100% Offline Privacy**: CleanDownloads never makes network connections during operation. Zero analytics, zero telemetries, and zero file metadata transmissions.
 - **Known Limitations**: Files actively locked with exclusive OS access cannot be moved until the locking application is closed; CleanDownloads will report these safely and leave them in place.
 
-For complete architectural threat models and security guarantees, see [SECURITY.md](SECURITY.md) and [docs/SECURITY_ARCHITECTURE.md](docs/SECURITY_ARCHITECTURE.md).
+For complete architectural threat models and security documentation, see [SECURITY.md](SECURITY.md) and [docs/SECURITY_ARCHITECTURE.md](docs/SECURITY_ARCHITECTURE.md).
 
 ---
 
@@ -322,7 +322,7 @@ Please review our [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CO
 
 - [x] v1.0.0: Core classification engine (13+ categories).
 - [x] v1.0.0: Win32 collision-safe move & zero overwrite.
-- [x] v1.0.0: SQLite history logging & cryptographic rollback (`undo`).
+- [x] v1.0.0: SQLite history logging & hash-verified rollback (`undo`).
 - [x] v1.0.0: Windows Task Scheduler integration (`schedule`).
 - [x] v1.0.0: Inno Setup Windows installer & PowerShell bootstrapper.
 - [ ] v1.1.0: File-age filtering rules (e.g., only organize files older than 3 days).
