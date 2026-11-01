@@ -106,7 +106,10 @@ def validate_safe_filename(name: str) -> None:
     
     Raises SafetyViolationError if invalid.
     """
-    if not name or len(name) > MAX_FILENAME_LENGTH:
+    if not name:
+        raise SafetyViolationError("Filename cannot be empty.")
+
+    if len(name) > MAX_FILENAME_LENGTH:
         raise SafetyViolationError(
             f"Filename length {len(name)} exceeds maximum allowed ({MAX_FILENAME_LENGTH})."
         )
@@ -115,8 +118,14 @@ def validate_safe_filename(name: str) -> None:
     if "\0" in name:
         raise SafetyViolationError("Filename contains invalid null byte.")
 
-    # Reject directory traversal and separators in basename
-    if "/" in name or "\\" in name or ".." in name:
+    # Reject navigation tokens (exact "." or "..")
+    if name in (".", ".."):
+        raise SafetyViolationError(
+            f"Filename '{name}' contains illegal path separators or traversal sequences."
+        )
+
+    # Reject directory path separators
+    if "/" in name or "\\" in name:
         raise SafetyViolationError(
             f"Filename '{name}' contains illegal path separators or traversal sequences."
         )
@@ -131,6 +140,12 @@ def validate_safe_filename(name: str) -> None:
     if re.search(r'[<>"|?*]', name):
         raise SafetyViolationError(
             f"Filename '{name}' contains illegal Windows characters."
+        )
+
+    # Reject filenames ending in a dot or space (Windows strips trailing dots and spaces)
+    if name.endswith((".", " ")):
+        raise SafetyViolationError(
+            f"Filename '{name}' ends with an illegal trailing dot or space."
         )
 
     # Reject Windows reserved device names (e.g. CON, PRN, AUX, NUL, COM1, LPT1, etc.)

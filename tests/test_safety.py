@@ -13,6 +13,7 @@ from cleandownloads.safety import (
     safe_move_file,
     split_extension,
     validate_move_paths,
+    validate_safe_filename,
 )
 
 
@@ -114,3 +115,28 @@ def test_safe_move_file_no_overwrite(tmp_path: Path):
     assert existing_dest.exists()
     assert existing_dest.read_text() == "existing content"
     assert not source.exists()
+
+
+@pytest.mark.parametrize("filename", ["report..final.pdf", "v1.2..3.zip"])
+def test_validate_safe_filename_accepts_legitimate_double_dots(filename: str):
+    """Verify legitimate filenames with double dots are accepted."""
+    validate_safe_filename(filename)
+
+
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "..",
+        "a/b",
+        "a\\b",
+        "con.txt",
+        "notes.txt.",
+        "file .pdf ",
+        "a:stream",
+    ],
+)
+def test_validate_safe_filename_rejects_unsafe_names(filename: str):
+    """Verify unsafe filenames, devices, ADS, and trailing dots/spaces are rejected."""
+    with pytest.raises(SafetyViolationError):
+        validate_safe_filename(filename)
+

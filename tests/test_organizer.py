@@ -111,3 +111,36 @@ def test_collision_safe_organize(tmp_path: Path):
     renamed_dest = dest_dir / "notes (1).pdf"
     assert renamed_dest.exists()
     assert renamed_dest.read_text() == "new notes"
+
+
+def test_organize_and_undo_double_dot_filename(tmp_path: Path):
+    from cleandownloads.undo import UndoEngine
+
+    downloads = tmp_path / "Downloads"
+    downloads.mkdir()
+
+    file_path = downloads / "report..final.pdf"
+    file_path.write_text("quarterly report content")
+
+    rules = [RuleConfig(**r) for r in DEFAULT_RULES]
+    config = AppConfig(rules=rules, downloads_dir=str(downloads))
+    history_db = HistoryDB(db_path=tmp_path / "hist_doubledot.db")
+    organizer = Organizer(config=config, history_db=history_db)
+
+    # 1. Organize
+    res = organizer.organize(dry_run=False)
+    assert res.successful_moves == 1
+    assert not file_path.exists()
+    dest = downloads / "Documents" / "PDF" / "report..final.pdf"
+    assert dest.exists()
+    assert dest.read_text() == "quarterly report content"
+
+    # 2. Undo
+    undo_engine = UndoEngine(history_db)
+    undo_res = undo_engine.undo_last()
+    assert undo_res is not None
+    assert undo_res.success_count == 1
+    assert not dest.exists()
+    assert file_path.exists()
+    assert file_path.read_text() == "quarterly report content"
+
