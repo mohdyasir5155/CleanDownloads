@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cleandownloads"
+version = "1.0.0"
+description = "One command. Zero clutter. Smart Downloads folder organizer for Windows."
+readme = "README.md"
+authors = [
+    { name = "CleanDownloads Contributors" }
+]
+license = { text = "MIT" }
+requires-python = ">=3.11"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Utilities"
+]
+dependencies = []
+
+[project.optional-dependencies]
+rich = ["rich>=13.0.0"]
+dev = [
+    "pytest>=8.0.0",
+    "rich>=13.0.0"
+]
+
+[project.scripts]
+cleandownloads = "cleandownloads.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"cleandownloads" = ["*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501", "W293"]

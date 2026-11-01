@@ -1,0 +1,121 @@
+{
+  "version": "1.0.0",
+  "downloads_dir": null,
+  "recursive": false,
+  "min_file_size_bytes": 0,
+  "max_file_size_bytes": null,
+  "conflict_strategy": "rename",
+  "ignored_extensions": [
+    "crdownload",
+    "part",
+    "tmp",
+    "download",
+    "aria2",
+    "opdownload"
+  ],
+  "excluded_directories": [
+    "Documents",
+    "Images",
+    "Videos",
+    "Audio",
+    "Archives",
+    "Software",
+    "Code",
+    "Other",
+    ".git",
+    ".clean_history"
+  ],
+  "rules": [
+    {
+      "name": "PDF Documents",
+      "category": "Documents",
+      "subfolder": "Documents/PDF",
+      "extensions": ["pdf"]
+    },
+    {
+      "name": "Word Documents",
+      "category": "Documents",
+      "subfolder": "Documents/Word",
+      "extensions": ["doc", "docx", "odt", "rtf"]
+    },
+    {
+      "name": "Excel Spreadsheets",
+      "category": "Documents",
+      "subfolder": "Documents/Excel",
+      "extensions": ["xls", "xlsx", "csv"]
+    },
+    {
+      "name": "PowerPoint Presentations",
+      "category": "Documents",
+      "subfolder": "Documents/PowerPoint",
+      "extensions": ["ppt", "pptx"]
+    },
+    {
+      "name": "PNG Images",
+      "category": "Images",
+      "subfolder": "Images/PNG",
+      "extensions": ["png"]
+    },
+    {
+      "name": "Other Images",
+      "category": "Images",
+      "subfolder": "Images",
+      "extensions": ["jpg", "jpeg", "gif", "webp", "svg", "bmp", "ico"]
+    },
+    {
+      "name": "Videos",
+      "category": "Videos",
+      "subfolder": "Videos",
+      "extensions": ["mp4", "mkv", "mov", "avi", "webm"]
+    },
+    {
+      "name": "Audio",
+      "category": "Audio",
+      "subfolder": "Audio",
+      "extensions": ["mp3", "wav", "flac", "aac", "m4a"]
+    },
+    {
+      "name": "ZIP Archives",
+      "category": "Archives",
+      "subfolder": "Archives/ZIP",
+      "extensions": ["zip"]
+    },
+    {
+      "name": "Other Archives",
+      "category": "Archives",
+      "subfolder": "Archives",
+      "extensions": ["rar", "7z", "tar", "gz"]
+    },
+    {
+      "name": "Executable Software",
+      "category": "Software",
+      "subfolder": "Software/EXE",
+      "extensions": ["exe"]
+    },
+    {
+      "name": "Installers & Packages",
+      "category": "Software",
+      "subfolder": "Software",
+      "extensions": ["msi", "msix"]
+    },
+    {
+      "name": "Python Scripts",
+      "category": "Code",
+      "subfolder": "Code/Python",
+      "extensions": ["py", "ipynb"]
+    },
+    {
+      "name": "Web Development",
+      "category": "Code",
+      "subfolder": "Code/Web Development",
+      "extensions": ["html", "css", "js", "ts", "jsx", "tsx"]
+    },
+    {
+      "name": "Programming Languages",
+      "category": "Code",
+      "subfolder": "Code/Programming",
+      "extensions": ["java", "cpp", "c", "cs", "go", "rs"]
+    }
+  ],
+  "default_fallback_folder": "Other"
+}

@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
+
+PackageIdentifier: CleanDownloads.CleanDownloads
+PackageVersion: 1.0.0
+PackageLocale: en-US
+Publisher: CleanDownloads
+PublisherUrl: https://github.com/cleandownloads/CleanDownloads
+PublisherSupportUrl: https://github.com/cleandownloads/CleanDownloads/issues
+Author: CleanDownloads
+PackageName: CleanDownloads
+PackageUrl: https://github.com/cleandownloads/CleanDownloads
+License: MIT
+LicenseUrl: https://github.com/cleandownloads/CleanDownloads/blob/main/LICENSE
+Copyright: Copyright (c) 2026 CleanDownloads
+CopyrightUrl: https://github.com/cleandownloads/CleanDownloads/blob/main/LICENSE
+ShortDescription: One command. Zero clutter. Smart, safe, and automated Windows Downloads organizer.
+Description: |
+  CleanDownloads is a lightweight, secure Windows CLI tool designed to keep your Downloads folder organized automatically.
+  It moves documents, images, installers, archives, media, and code into clean category folders without deleting user files.
+  Features include dry-run preview, undo/rollback history, scheduled automation, duplicate detection, and full privacy (100% offline).
+Moniker: cleandownloads
+Tags:
+  - automation
+  - cli
+  - download-organizer
+  - file-management
+  - folder-cleaner
+  - organizer
+  - python
+  - utility
+  - windows
+ReleaseNotesUrl: https://github.com/cleandownloads/CleanDownloads/releases/tag/v1.0.0
+PurchaseUrl: ""
+InstallationNotes: Run 'cleandownloads --help' to get started. CleanDownloads installs to user AppData and requires no administrator privileges.
+Documentations:
+  - DocumentLabel: Documentation
+    DocumentUrl: https://github.com/cleandownloads/CleanDownloads#readme
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

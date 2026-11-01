@@ -1,0 +1,12 @@
+{
+  "name": "cleandownloads-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "One command. Zero clutter. Smart Downloads folder organizer for Windows.",
+  "scripts": {
+    "build": "npm --prefix desktop run build",
+    "dev": "npm --prefix desktop run dev",
+    "desktop": "npm --prefix desktop run dev",
+    "test": "python -m pytest -v"
+  }
+}

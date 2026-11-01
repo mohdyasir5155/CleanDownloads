@@ -1,0 +1,143 @@
+name: Production Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  validate:
+    name: Test, Lint & Security Audit
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install validation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff bandit pytest
+
+      - name: Run Ruff Linting
+        run: |
+          ruff check src/ tests/
+
+      - name: Run Bandit Security Analysis
+        run: |
+          bandit -r src/ -ll
+
+      - name: Execute Automated Test Suite
+        run: |
+          pytest tests/ -v
+
+  build-and-release:
+    name: Build & Draft Release
+    needs: validate
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller rich
+
+      - name: Install Inno Setup 6
+        run: |
+          choco install innosetup --no-progress
+          echo "C:\Program Files (x86)\Inno Setup 6" >> $env:GITHUB_PATH
+
+      - name: Extract Version from Tag
+        id: get_version
+        shell: pwsh
+        run: |
+          $ver = "${{ github.ref_name }}" -replace "^v", ""
+          Write-Host "Releasing version: $ver"
+          echo "version=$ver" >> $env:GITHUB_OUTPUT
+
+      - name: Build Standalone Executable (PyInstaller)
+        shell: pwsh
+        run: |
+          & scripts\build_executable.ps1 -Version "${{ steps.get_version.outputs.version }}"
+
+      - name: Build Windows Installer (Inno Setup)
+        shell: pwsh
+        run: |
+          & scripts\build_installer.ps1 -Version "${{ steps.get_version.outputs.version }}"
+
+      - name: Generate Checksums
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path dist\*.exe | ForEach-Object {
+            $hash = (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash.ToLower()
+            "$hash *$($_.Name)"
+          } | Out-File -FilePath dist\checksums.txt -Encoding utf8
+          Get-Content dist\checksums.txt
+
+      - name: Attest Build Provenance
+        uses: actions/attest-build-provenance@v1
+        continue-on-error: true
+        with:
+          subject-path: |
+            dist/cleandownloads.exe
+            dist/CleanDownloads-Setup-*.exe
+
+      - name: Create Draft Release & Upload Assets
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ver = "${{ steps.get_version.outputs.version }}"
+          $tag = "${{ github.ref_name }}"
+          $releaseNotes = @"
+          # CleanDownloads $tag
+
+          **One command. Zero clutter.** Smart, safe, and automated Windows Downloads organizer.
+
+          ## Installation Options
+
+          ### Option 1: PowerShell Bootstrapper (Recommended)
+          ```powershell
+          irm https://raw.githubusercontent.com/${{ github.repository }}/main/install.ps1 | iex
+          ```
+
+          ### Option 2: Windows Setup Installer
+          Download and run `CleanDownloads-Setup-$ver.exe`.
+
+          ### Option 3: Standalone Portable Binary
+          Download `cleandownloads.exe` and place it anywhere in your PATH.
+
+          ## Checksums (SHA-256)
+          ```
+          $((Get-Content dist\checksums.txt | Out-String).Trim())
+          ```
+
+          > [!NOTE]
+          > This release is currently in DRAFT status pending final manual verification.
+          "@
+
+          gh release create $tag `
+            dist\cleandownloads.exe `
+            dist\CleanDownloads-Setup-*.exe `
+            dist\checksums.txt `
+            --draft `
+            --title "CleanDownloads $tag" `
+            --notes $releaseNotes
