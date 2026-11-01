@@ -170,20 +170,56 @@ def validate_safe_filename(name: str) -> None:
         )
 
 
-def compute_file_sha256(path: Path) -> str:
-    """Compute the SHA-256 hash of a file using streaming reads.
-    
-    Distinguishes integrity verification from authentication.
-    """
+def check_lock_and_hash(path: Path) -> str:
+    """Check if file is accessible (not locked) and compute its SHA-256 in a single file open."""
     if not path.is_file():
         raise FileNotFoundError(f"Cannot hash non-existent or non-file: {path}")
 
     hasher = hashlib.sha256()
-    buffer_size = 65536  # 64 KB chunks
-    with open(path, "rb") as f:
+    buffer_size = 65536
+
+    f = None
+    try:
+        if sys.platform == "win32":
+            try:
+                f = open(path, "r+b")
+            except PermissionError as e:
+                winerror = getattr(e, "winerror", None)
+                if winerror in (32, 33):  # ERROR_SHARING_VIOLATION or ERROR_LOCK_VIOLATION
+                    raise FileLockError(f"Cannot access locked file: {path}") from e
+                # Fallback to read-only open in case of read-only file attribute
+                try:
+                    f = open(path, "rb")
+                except PermissionError as e2:
+                    winerror2 = getattr(e2, "winerror", None)
+                    if winerror2 in (32, 33):
+                        raise FileLockError(f"Cannot access locked file: {path}") from e2
+                    raise
+            except OSError as e:
+                if getattr(e, "winerror", None) in (32, 33):
+                    raise FileLockError(f"Cannot access locked file: {path}") from e
+                raise
+        else:
+            try:
+                f = open(path, "rb")
+            except (PermissionError, OSError) as e:
+                raise FileLockError(f"Cannot access locked file: {path}") from e
+
         while chunk := f.read(buffer_size):
             hasher.update(chunk)
+    finally:
+        if f is not None:
+            try:
+                f.close()
+            except Exception:
+                pass
+
     return hasher.hexdigest()
+
+
+def compute_file_sha256(path: Path) -> str:
+    """Compute the SHA-256 hash of a file using single-pass streaming read."""
+    return check_lock_and_hash(path)
 
 
 def get_default_downloads_dir() -> Path:
@@ -495,7 +531,11 @@ def safe_move_file(source: Path, destination: Path, boundary: Path) -> Path:
 
 
 def atomic_collision_safe_move(
-    source: Path, destination: Path, boundary: Path, max_collision_attempts: int = 1000
+    source: Path,
+    destination: Path,
+    boundary: Path,
+    max_collision_attempts: int = 1000,
+    precomputed_hash: str | None = None,
 ) -> tuple[Path, str]:
     """Execute an atomic collision-safe move without overwrite risk.
     
@@ -514,11 +554,14 @@ def atomic_collision_safe_move(
             f"Safety violation: Symlink '{source}' escapes permitted boundary."
         )
 
-    if is_file_locked(source):
-        raise FileLockError(f"Cannot move locked file: {source}")
+    # If hash was precomputed, avoid re-reading the file; otherwise check lock & hash in single open
+    if precomputed_hash is not None:
+        if is_file_locked(source):
+            raise FileLockError(f"Cannot move locked file: {source}")
+        sha256_hash = precomputed_hash
+    else:
+        sha256_hash = check_lock_and_hash(source)
 
-    # Compute SHA-256 hash before move for integrity audit
-    sha256_hash = compute_file_sha256(source)
     source_size = source.stat().st_size
 
     # Ensure parent directory exists

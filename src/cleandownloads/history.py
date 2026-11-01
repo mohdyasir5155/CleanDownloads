@@ -224,14 +224,22 @@ class HistoryDB:
             )
             conn.commit()
 
-    def update_batch_status(self, batch_id: str, status: str) -> None:
-        """Update batch status (e.g. to 'UNDONE')."""
+    def update_batch_status(
+        self, batch_id: str, status: str, notes: str | None = None
+    ) -> None:
+        """Update batch status and optional notes (e.g. to 'UNDONE')."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute(
-                "UPDATE batches SET status = ? WHERE id = ?",
-                (status, batch_id),
-            )
+            if notes is not None:
+                cursor.execute(
+                    "UPDATE batches SET status = ?, notes = ? WHERE id = ?",
+                    (status, notes, batch_id),
+                )
+            else:
+                cursor.execute(
+                    "UPDATE batches SET status = ? WHERE id = ?",
+                    (status, batch_id),
+                )
             conn.commit()
 
     def get_last_batch(self) -> BatchRecord | None:

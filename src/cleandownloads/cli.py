@@ -323,16 +323,46 @@ def cmd_organize(
 def cmd_undo(
     history_db: HistoryDB,
     batch_id: str | None = None,
+    force_modified: bool = False,
+    auto_yes: bool = False,
     json_mode: bool = False,
 ) -> None:
     """Execute undo operation."""
+    if force_modified and not auto_yes:
+        if json_mode:
+            print(
+                json.dumps(
+                    {
+                        "success": False,
+                        "error": "confirmation_required",
+                        "message": "--force-modified requires explicit confirmation (pass --yes)",
+                    },
+                    indent=2,
+                )
+            )
+            return
+
+        print_banner()
+        print(f"\n{YELLOW}{BOLD}WARNING: Force Restoring Modified Files{RESET}")
+        print("  One or more files may have been edited or altered since organizing.")
+        print("  Restoring them will move the modified versions back to their original locations.\n")
+        try:
+            confirm = input("  Are you sure you want to proceed with --force-modified? (y/N): ").strip().lower()
+        except (KeyboardInterrupt, EOFError):
+            print("\n  Undo aborted.\n")
+            return
+
+        if confirm not in ("y", "yes"):
+            print("  Undo cancelled.\n")
+            return
+
     undo_engine = UndoEngine(history_db)
 
     try:
         if batch_id:
-            res = undo_engine.undo_batch(batch_id)
+            res = undo_engine.undo_batch(batch_id, force_modified=force_modified)
         else:
-            res = undo_engine.undo_last()
+            res = undo_engine.undo_last(force_modified=force_modified)
     except OperationLockError:
         if json_mode:
             print(
@@ -585,6 +615,17 @@ def build_parser() -> argparse.ArgumentParser:
     undo_parser.add_argument(
         "--batch-id", type=str, default=None, help="Specific batch ID to undo (defaults to latest)"
     )
+    undo_parser.add_argument(
+        "--force-modified",
+        action="store_true",
+        help="Restore files even if content was modified after organization",
+    )
+    undo_parser.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="Automatic yes to confirmation prompt for --force-modified",
+    )
 
     # history
     hist_parser = subparsers.add_parser("history", parents=[common_parser], help="Show past organization history")
@@ -649,7 +690,13 @@ def main() -> None:
             scheduled=getattr(args, "scheduled", False),
         )
     elif args.command == "undo":
-        cmd_undo(history_db, batch_id=args.batch_id, json_mode=json_mode)
+        cmd_undo(
+            history_db,
+            batch_id=args.batch_id,
+            force_modified=getattr(args, "force_modified", False),
+            auto_yes=getattr(args, "yes", False),
+            json_mode=json_mode,
+        )
     elif args.command == "history":
         cmd_history(history_db, limit=args.limit, json_mode=json_mode)
     elif args.command == "status":

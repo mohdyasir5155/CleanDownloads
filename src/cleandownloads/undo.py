@@ -9,10 +9,11 @@ from pathlib import Path
 
 from cleandownloads.history import BatchRecord, HistoryDB
 from cleandownloads.safety import (
+    FileLockError,
     SafetyViolationError,
     SingleInstanceLock,
     atomic_collision_safe_move,
-    compute_file_sha256,
+    check_lock_and_hash,
     get_default_downloads_dir,
     is_file_locked,
     is_path_within_boundary,
@@ -114,7 +115,7 @@ class UndoEngine:
         except Exception:
             return None
 
-    def undo_last(self) -> UndoResult | None:
+    def undo_last(self, force_modified: bool = False) -> UndoResult | None:
         """Undo the most recent organization batch that has active moved files."""
         batches = self.history_db.get_recent_batches(limit=10)
         target_batch: BatchRecord | None = None
@@ -129,14 +130,14 @@ class UndoEngine:
         if not target_batch:
             return None
 
-        return self.undo_batch(target_batch.id)
+        return self.undo_batch(target_batch.id, force_modified=force_modified)
 
-    def undo_batch(self, batch_id: str) -> UndoResult:
+    def undo_batch(self, batch_id: str, force_modified: bool = False) -> UndoResult:
         """Undo all moved operations for a specific batch ID."""
         with self.lock:
-            return self._undo_batch_locked(batch_id)
+            return self._undo_batch_locked(batch_id, force_modified=force_modified)
 
-    def _undo_batch_locked(self, batch_id: str) -> UndoResult:
+    def _undo_batch_locked(self, batch_id: str, force_modified: bool = False) -> UndoResult:
         operations = self.history_db.get_operations_for_batch(
             batch_id=batch_id, status_filter="MOVED"
         )
@@ -147,6 +148,7 @@ class UndoEngine:
         )
 
         restricted_roots = get_restricted_system_roots()
+        had_override = False
 
         for op in operations:
             if op.id is None:
@@ -249,32 +251,24 @@ class UndoEngine:
                 )
                 continue
 
-            # Check if locked
-            if is_file_locked(current_dest):
-                result.failed_files.append(
-                    FailedUndo(
-                        operation_id=op.id,
-                        moved_from_path=current_dest,
-                        target_path=orig_path,
-                        reason="File is currently open or locked by another process.",
-                    )
-                )
-                continue
-
-            # SHA-256 integrity check if hash was recorded
+            # Check if locked and verify integrity in single pass if hash was recorded
+            hash_mismatch = False
+            current_hash = None
             if op.file_hash:
                 try:
-                    current_hash = compute_file_sha256(current_dest)
+                    current_hash = check_lock_and_hash(current_dest)
                     if current_hash.lower() != op.file_hash.lower():
-                        result.failed_files.append(
-                            FailedUndo(
-                                operation_id=op.id,
-                                moved_from_path=current_dest,
-                                target_path=orig_path,
-                                reason="File integrity verification failed: file content was modified after organization (hash mismatch).",
-                            )
+                        hash_mismatch = True
+                except FileLockError:
+                    result.failed_files.append(
+                        FailedUndo(
+                            operation_id=op.id,
+                            moved_from_path=current_dest,
+                            target_path=orig_path,
+                            reason="File is currently open or locked by another process.",
                         )
-                        continue
+                    )
+                    continue
                 except Exception as exc:
                     result.failed_files.append(
                         FailedUndo(
@@ -285,22 +279,49 @@ class UndoEngine:
                         )
                     )
                     continue
+            else:
+                if is_file_locked(current_dest):
+                    result.failed_files.append(
+                        FailedUndo(
+                            operation_id=op.id,
+                            moved_from_path=current_dest,
+                            target_path=orig_path,
+                            reason="File is currently open or locked by another process.",
+                        )
+                    )
+                    continue
+
+            if hash_mismatch:
+                if not force_modified:
+                    result.failed_files.append(
+                        FailedUndo(
+                            operation_id=op.id,
+                            moved_from_path=current_dest,
+                            target_path=orig_path,
+                            reason="File integrity verification failed: file content was modified after organization (hash mismatch).",
+                        )
+                    )
+                    continue
+                had_override = True
 
             try:
                 # Ensure destination parent exists
                 orig_path.parent.mkdir(parents=True, exist_ok=True)
 
-                # Move back collision-safely without overwriting existing files
+                # Move back collision-safely without overwriting existing files,
+                # passing precomputed_hash to avoid duplicate hashing pass
                 actual_restored_path, _ = atomic_collision_safe_move(
                     source=current_dest,
                     destination=orig_path,
                     boundary=effective_boundary,
+                    precomputed_hash=current_hash,
                 )
 
-                # Update database record
+                # Update database record, recording OVERRIDE_MODIFIED if hash changed
                 self.history_db.update_operation_status(
                     op_id=op.id,
                     status="UNDONE",
+                    error_info="OVERRIDE_MODIFIED" if hash_mismatch else None,
                 )
 
                 result.restored_files.append(
@@ -324,9 +345,10 @@ class UndoEngine:
 
         # Update batch status
         if result.total_attempted > 0:
+            notes = "Undone with force-modified override" if had_override else None
             if result.success_count == result.total_attempted:
-                self.history_db.update_batch_status(batch_id=batch_id, status="UNDONE")
+                self.history_db.update_batch_status(batch_id=batch_id, status="UNDONE", notes=notes)
             elif result.success_count > 0:
-                self.history_db.update_batch_status(batch_id=batch_id, status="PARTIALLY_UNDONE")
+                self.history_db.update_batch_status(batch_id=batch_id, status="PARTIALLY_UNDONE", notes=notes)
 
         return result
