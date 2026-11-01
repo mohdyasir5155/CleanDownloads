@@ -658,10 +658,10 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     """CLI entrypoint."""
     parser = build_parser()
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     config_mgr = ConfigManager()
     if getattr(args, "downloads_dir", None):

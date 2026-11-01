@@ -127,8 +127,13 @@ def test_organize_and_undo_double_dot_filename(tmp_path: Path):
     history_db = HistoryDB(db_path=tmp_path / "hist_doubledot.db")
     organizer = Organizer(config=config, history_db=history_db)
 
-    # 1. Organize
-    res = organizer.organize(dry_run=False)
+    # 1. Scan
+    scan_res = organizer.scanner.scan()
+    assert scan_res.total_ready == 1
+    assert scan_res.ready_files[0].filename == "report..final.pdf"
+
+    # 2. Organize
+    res = organizer.organize(dry_run=False, scan_result=scan_res)
     assert res.successful_moves == 1
     assert not file_path.exists()
     dest = downloads / "Documents" / "PDF" / "report..final.pdf"

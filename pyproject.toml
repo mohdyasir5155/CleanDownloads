@@ -32,7 +32,9 @@ dependencies = []
 rich = ["rich>=13.0.0"]
 dev = [
     "pytest>=8.0.0",
-    "rich>=13.0.0"
+    "rich>=13.0.0",
+    "ruff>=0.8.0",
+    "bandit>=1.8.0",
 ]
 
 [project.scripts]

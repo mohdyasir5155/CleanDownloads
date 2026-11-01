@@ -9,8 +9,6 @@ from pathlib import Path
 from cleandownloads.config import AppConfig
 from cleandownloads.history import HistoryDB
 from cleandownloads.safety import (
-    FileLockError,
-    SafetyViolationError,
     SingleInstanceLock,
     atomic_collision_safe_move,
     generate_collision_safe_path,
@@ -197,7 +195,9 @@ class Organizer:
                     if on_progress:
                         on_progress(f, actual_dest)
 
-                except (SafetyViolationError, FileLockError, PermissionError, OSError, Exception) as exc:
+                except Exception as exc:
+                    # Catch move failures (e.g. safety violations, file locks, permissions, OSError)
+                    # and record each as a failed operation in history rather than aborting the entire batch.
                     err_msg = str(exc)
                     self.history_db.record_operation(
                         batch_id=batch_id,

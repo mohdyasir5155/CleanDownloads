@@ -13,6 +13,7 @@ Validates CleanDownloads defense-in-depth security controls:
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import pytest
@@ -323,10 +324,15 @@ def test_undo_refuses_corrupted_system_paths_in_db(tmp_path: Path):
     history_db = HistoryDB(db_path=db_path)
 
     batch_id = history_db.start_batch(total_files=1)
-    # Simulate attacker tampering with history.db to restore into System32
+    # Simulate attacker tampering with history.db to restore into restricted system path
+    target_path = (
+        r"C:\Windows\System32\malicious.dll"
+        if sys.platform == "win32"
+        else "/etc/malicious.dll"
+    )
     history_db.record_operation(
         batch_id=batch_id,
-        original_path=r"C:\Windows\System32\malicious.dll",
+        original_path=target_path,
         destination_path=str(test_file),
         file_size=8,
         file_extension="dll",

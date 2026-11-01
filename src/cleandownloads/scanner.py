@@ -113,17 +113,22 @@ class Scanner:
         self, downloads_dir: Path, excluded_names: set[str], result: ScanResult
     ) -> None:
         """Count existing files in organized category folders."""
-        for folder_name in excluded_names:
-            folder_path = downloads_dir / folder_name
-            if folder_path.is_dir() and not folder_path.is_symlink():
-                try:
-                    for root, _, files in os.walk(folder_path):
-                        for f in files:
-                            # skip hidden/system files in count
-                            if not f.startswith("."):
-                                result.already_organized_count += 1
-                except Exception:
-                    pass
+        try:
+            entries = list(downloads_dir.iterdir())
+        except Exception:
+            return
+
+        for entry in entries:
+            try:
+                if entry.is_dir() and not entry.is_symlink():
+                    if entry.name.lower() in excluded_names:
+                        for _root, _dirs, files in os.walk(entry):
+                            for f in files:
+                                # skip hidden/system files in count
+                                if not f.startswith("."):
+                                    result.already_organized_count += 1
+            except Exception:
+                pass
 
     def _scan_root_only(
         self,

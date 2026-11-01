@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-11-01
+
+### Fixed & Improved
+- **Installer & Verification (Task 1)**:
+  - Switched default verification path in `install.ps1` to mandatory SHA-256 checksums from `checksums.txt` (fails closed if missing or mismatched) plus GitHub build provenance attestation via `gh attestation verify` when `gh` CLI is available.
+  - Made Authenticode signature verification opt-in via `-RequireSignature`.
+  - Removed fallback that hardcoded version "1.0.0" and skipped checksums.
+  - Fixed stale repository parameter documentation default to `mohdyasir5155/CleanDownloads`.
+  - Updated README, INSTALLATION.md, and SECURITY_ARCHITECTURE.md to reflect verified installer behavior.
+- **Filename Validation (Task 2)**:
+  - `validate_safe_filename` in `safety.py` no longer rejects legitimate filenames with double dots (e.g., `report..final.pdf`, `v1.2..3.zip`).
+  - Precisely rejects: empty names, `.` / `..`, path separators, null bytes, `:`, `<>"|?*`, Windows reserved device names (`CON`, `NUL`, etc.), and trailing dots/spaces.
+- **Concurrency & SQLite Robustness (Task 3)**:
+  - Added single-instance process lock for `organize` and `undo` via `SingleInstanceLock` in `safety.py` (`msvcrt.locking` on Windows, `fcntl.flock` on POSIX).
+  - Concurrent manual runs exit with code 1; scheduled background runs exit quietly with code 0.
+  - Configured SQLite connection in `history.py` with `timeout=30`, `PRAGMA journal_mode=WAL`, and `PRAGMA busy_timeout=30000`.
+- **Minimum File Age Filter (Task 4)**:
+  - Added `min_file_age_seconds` configuration to `AppConfig` (default 300 seconds).
+  - Skips files newer than the threshold with reason `too_new`.
+  - Added `--min-age` CLI argument to `scan`, `preview`, and `organize`.
+  - Updated documentation and default rules configuration.
+- **Scheduler Locale Independence (Task 5)**:
+  - Replaced localized text parsing of `schtasks /Query` with XML parsing via `xml.etree.ElementTree` (`schtasks /Query /TN <name> /XML`).
+  - Created scheduled tasks run hidden and only when the user is logged on.
+- **Hashing Cost & Undo Override (Task 6)**:
+  - Eliminated redundant file reads by combining sharing lock inspection and SHA-256 hashing into a single open (`check_lock_and_hash`).
+  - Added `undo --force-modified` with explicit confirmation prompt or `-y`/`--yes` to restore altered files, recording `OVERRIDE_MODIFIED` in history.
+- **Honest Security Claims & POSIX Parity (Task 7)**:
+  - Implemented atomic no-overwrite move on POSIX (`os.link` then `os.unlink`, with `O_CREAT | O_EXCL` cross-filesystem fallback).
+  - Revised documentation across README, SECURITY.md, and docs/ to clarify that SQLite SHA-256 detects accidental modification rather than acting as tamper-proof against local database edits.
+  - Removed "kernel-level" and "cryptographic undo" phrasing and softened "guaranteed" language around the 14 invariants.
+  - Updated `pyproject.toml` classifier to "4 - Beta".
+  - Replaced static test badge with live GitHub Actions CI badge.
+- **Test Hygiene & CI Consolidation (Task 8)**:
+  - Fixed Linux test failures in `scanner.py` (case-insensitive folder lookup via directory listing) and `test_security_attacks.py` (platform-aware system path validation).
+  - Consolidated `ci.yml` and `tests.yml` into a unified cross-platform workflow testing on `windows-latest` and `ubuntu-latest` across Python 3.11, 3.12, and 3.13.
+  - Added `timeout-minutes` to every job, pinned all third-party actions by full commit SHA with version comments, and set `persist-credentials: false`.
+  - Added `ruff` and `bandit` to `dev` extra in `pyproject.toml`.
+  - Added JSON contract tests (`tests/test_contracts.py`) covering `scan`, `preview`, `organize`, `undo`, `history`, and `status` matching `desktop/src/types.ts`.
+  - Replaced redundant exception tuple in `organizer.py` with `except Exception` and clear rationale comment.
+
 ## [1.0.0] - 2026-11-01
 
 ### Added
