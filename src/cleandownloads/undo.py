@@ -10,6 +10,7 @@ from pathlib import Path
 from cleandownloads.history import BatchRecord, HistoryDB
 from cleandownloads.safety import (
     SafetyViolationError,
+    SingleInstanceLock,
     atomic_collision_safe_move,
     compute_file_sha256,
     get_default_downloads_dir,
@@ -82,9 +83,11 @@ class UndoEngine:
         self,
         history_db: HistoryDB | None = None,
         boundary: Path | None = None,
+        lock: SingleInstanceLock | None = None,
     ) -> None:
         self.history_db = history_db or HistoryDB()
         self.boundary = boundary
+        self.lock = lock or SingleInstanceLock()
 
     def _determine_effective_boundary(
         self, orig_path: Path, current_dest: Path
@@ -130,6 +133,10 @@ class UndoEngine:
 
     def undo_batch(self, batch_id: str) -> UndoResult:
         """Undo all moved operations for a specific batch ID."""
+        with self.lock:
+            return self._undo_batch_locked(batch_id)
+
+    def _undo_batch_locked(self, batch_id: str) -> UndoResult:
         operations = self.history_db.get_operations_for_batch(
             batch_id=batch_id, status_filter="MOVED"
         )

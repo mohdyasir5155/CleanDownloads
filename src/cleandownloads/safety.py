@@ -27,6 +27,16 @@ import shutil
 import sys
 from pathlib import Path
 
+try:
+    import msvcrt
+except ImportError:
+    msvcrt = None
+
+try:
+    import fcntl
+except ImportError:
+    fcntl = None
+
 # Windows File Attribute Constants
 FILE_ATTRIBUTE_HIDDEN = 0x2
 FILE_ATTRIBUTE_SYSTEM = 0x4
@@ -99,6 +109,10 @@ class FileLockError(Exception):
 
 class IntegrityError(Exception):
     """Raised when a file hash or metadata mismatch indicates tampering or modification."""
+
+
+class OperationLockError(SafetyViolationError):
+    """Raised when an operation lock cannot be acquired because another instance is running."""
 
 
 def validate_safe_filename(name: str) -> None:
@@ -226,6 +240,70 @@ def get_app_data_dir() -> Path:
         app_dir = Path.home() / ".cleandownloads"
     app_dir.mkdir(parents=True, exist_ok=True)
     return app_dir.resolve()
+
+
+class SingleInstanceLock:
+    """Process-level mutex for organize and undo operations using OS file locking."""
+
+    def __init__(self, lock_path: Path | None = None) -> None:
+        if lock_path is None:
+            lock_path = get_app_data_dir() / "cleandownloads.lock"
+        self.lock_path = Path(lock_path)
+        self._file = None
+
+    def acquire(self) -> bool:
+        """Attempt to acquire a non-blocking lock. Return True if acquired, False if already locked."""
+        try:
+            self.lock_path.parent.mkdir(parents=True, exist_ok=True)
+            self._file = open(self.lock_path, "a+b")
+            self._file.seek(0)
+            if self.lock_path.stat().st_size == 0:
+                self._file.write(b"1")
+                self._file.flush()
+                self._file.seek(0)
+
+            if msvcrt is not None:
+                msvcrt.locking(self._file.fileno(), msvcrt.LK_NBLCK, 1)
+            elif fcntl is not None:
+                fcntl.flock(self._file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return True
+        except (OSError, PermissionError):
+            if self._file is not None:
+                try:
+                    self._file.close()
+                except Exception:
+                    pass
+                self._file = None
+            return False
+
+    def release(self) -> None:
+        """Release the acquired process lock."""
+        if self._file is not None:
+            try:
+                self._file.seek(0)
+                if msvcrt is not None:
+                    msvcrt.locking(self._file.fileno(), msvcrt.LK_UNLCK, 1)
+                elif fcntl is not None:
+                    fcntl.flock(self._file.fileno(), fcntl.LOCK_UN)
+            except Exception:
+                pass
+            finally:
+                try:
+                    self._file.close()
+                except Exception:
+                    pass
+                self._file = None
+
+    def __enter__(self) -> SingleInstanceLock:
+        if not self.acquire():
+            raise OperationLockError(
+                "Another CleanDownloads organize or undo operation is currently running."
+            )
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self.release()
+
 
 
 def is_path_within_boundary(target: Path, boundary: Path) -> bool:

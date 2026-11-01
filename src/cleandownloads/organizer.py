@@ -11,6 +11,7 @@ from cleandownloads.history import HistoryDB
 from cleandownloads.safety import (
     FileLockError,
     SafetyViolationError,
+    SingleInstanceLock,
     atomic_collision_safe_move,
     generate_collision_safe_path,
 )
@@ -75,10 +76,12 @@ class Organizer:
         config: AppConfig,
         history_db: HistoryDB | None = None,
         scanner: Scanner | None = None,
+        lock: SingleInstanceLock | None = None,
     ) -> None:
         self.config = config
         self.history_db = history_db or HistoryDB()
         self.scanner = scanner or Scanner(config)
+        self.lock = lock or SingleInstanceLock()
 
     def plan(self, scan_result: ScanResult | None = None) -> MovePlan:
         """Generate a dry-run plan without moving any files."""
@@ -141,96 +144,97 @@ class Organizer:
                 is_dry_run=True,
             )
 
-        downloads_dir = scan_result.downloads_dir
-        ready_files = scan_result.ready_files
+        with self.lock:
+            downloads_dir = scan_result.downloads_dir
+            ready_files = scan_result.ready_files
 
-        if not ready_files:
-            return MoveResult(
-                batch_id=None,
-                total_files=0,
-                successful_moves=0,
-                failed_moves=0,
-                is_dry_run=False,
+            if not ready_files:
+                return MoveResult(
+                    batch_id=None,
+                    total_files=0,
+                    successful_moves=0,
+                    failed_moves=0,
+                    is_dry_run=False,
+                )
+
+            batch_id = self.history_db.start_batch(
+                total_files=len(ready_files),
+                notes="Organized via CleanDownloads",
             )
 
-        batch_id = self.history_db.start_batch(
-            total_files=len(ready_files),
-            notes="Organized via CleanDownloads",
-        )
+            successful_moves: list[ExecutedMove] = []
+            failed_moves: list[FailedMove] = []
 
-        successful_moves: list[ExecutedMove] = []
-        failed_moves: list[FailedMove] = []
-
-        for f in ready_files:
-            target_dest = downloads_dir / f.destination_relative_path
-            try:
-                actual_dest, file_hash = atomic_collision_safe_move(
-                    source=f.path,
-                    destination=target_dest,
-                    boundary=downloads_dir,
-                )
-
-                op_id = self.history_db.record_operation(
-                    batch_id=batch_id,
-                    original_path=str(f.path),
-                    destination_path=str(actual_dest),
-                    file_size=f.size_bytes,
-                    file_extension=f.extension,
-                    category=f.category,
-                    status="MOVED",
-                    file_hash=file_hash,
-                )
-
-                item = ExecutedMove(
-                    source=f.path,
-                    destination=actual_dest,
-                    file_size=f.size_bytes,
-                    category=f.category,
-                    operation_id=op_id,
-                )
-                successful_moves.append(item)
-
-                if on_progress:
-                    on_progress(f, actual_dest)
-
-            except (SafetyViolationError, FileLockError, PermissionError, OSError, Exception) as exc:
-                err_msg = str(exc)
-                self.history_db.record_operation(
-                    batch_id=batch_id,
-                    original_path=str(f.path),
-                    destination_path=str(target_dest),
-                    file_size=f.size_bytes,
-                    file_extension=f.extension,
-                    category=f.category,
-                    status="FAILED",
-                    error_info=err_msg,
-                )
-
-                failed_moves.append(
-                    FailedMove(
+            for f in ready_files:
+                target_dest = downloads_dir / f.destination_relative_path
+                try:
+                    actual_dest, file_hash = atomic_collision_safe_move(
                         source=f.path,
-                        target_destination=target_dest,
-                        error=err_msg,
-                        category=f.category,
+                        destination=target_dest,
+                        boundary=downloads_dir,
                     )
-                )
 
-                if on_error:
-                    on_error(f, exc)
+                    op_id = self.history_db.record_operation(
+                        batch_id=batch_id,
+                        original_path=str(f.path),
+                        destination_path=str(actual_dest),
+                        file_size=f.size_bytes,
+                        file_extension=f.extension,
+                        category=f.category,
+                        status="MOVED",
+                        file_hash=file_hash,
+                    )
 
-        # Finalize batch in history
-        self.history_db.finish_batch(
-            batch_id=batch_id,
-            successful_moves=len(successful_moves),
-            failed_moves=len(failed_moves),
-        )
+                    item = ExecutedMove(
+                        source=f.path,
+                        destination=actual_dest,
+                        file_size=f.size_bytes,
+                        category=f.category,
+                        operation_id=op_id,
+                    )
+                    successful_moves.append(item)
 
-        return MoveResult(
-            batch_id=batch_id,
-            total_files=len(ready_files),
-            successful_moves=len(successful_moves),
-            failed_moves=len(failed_moves),
-            moved_items=successful_moves,
-            failed_items=failed_moves,
-            is_dry_run=False,
-        )
+                    if on_progress:
+                        on_progress(f, actual_dest)
+
+                except (SafetyViolationError, FileLockError, PermissionError, OSError, Exception) as exc:
+                    err_msg = str(exc)
+                    self.history_db.record_operation(
+                        batch_id=batch_id,
+                        original_path=str(f.path),
+                        destination_path=str(target_dest),
+                        file_size=f.size_bytes,
+                        file_extension=f.extension,
+                        category=f.category,
+                        status="FAILED",
+                        error_info=err_msg,
+                    )
+
+                    failed_moves.append(
+                        FailedMove(
+                            source=f.path,
+                            target_destination=target_dest,
+                            error=err_msg,
+                            category=f.category,
+                        )
+                    )
+
+                    if on_error:
+                        on_error(f, exc)
+
+            # Finalize batch in history
+            self.history_db.finish_batch(
+                batch_id=batch_id,
+                successful_moves=len(successful_moves),
+                failed_moves=len(failed_moves),
+            )
+
+            return MoveResult(
+                batch_id=batch_id,
+                total_files=len(ready_files),
+                successful_moves=len(successful_moves),
+                failed_moves=len(failed_moves),
+                moved_items=successful_moves,
+                failed_items=failed_moves,
+                is_dry_run=False,
+            )

@@ -55,11 +55,11 @@ class WindowsScheduler:
         cleandownloads_path = shutil.which("cleandownloads")
         if cleandownloads_path and Path(cleandownloads_path).is_file():
             resolved = str(Path(cleandownloads_path).resolve())
-            return f'"{resolved}" organize'
+            return f'"{resolved}" organize --scheduled'
 
         # Fallback to current python executing cleandownloads module
         python_exe = str(Path(sys.executable).resolve())
-        return f'"{python_exe}" -m cleandownloads.cli organize'
+        return f'"{python_exe}" -m cleandownloads.cli organize --scheduled'
 
     def get_status(self) -> ScheduleStatus:
         """Query the status of the scheduled task using schtasks.exe."""

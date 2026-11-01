@@ -9,7 +9,7 @@ from cleandownloads.config import ConfigManager
 from cleandownloads.history import HistoryDB
 from cleandownloads.organizer import Organizer
 from cleandownloads.preview import format_file_size, format_preview
-from cleandownloads.safety import get_app_data_dir
+from cleandownloads.safety import OperationLockError, get_app_data_dir
 from cleandownloads.scanner import Scanner
 from cleandownloads.scheduler import WindowsScheduler
 from cleandownloads.undo import UndoEngine
@@ -101,29 +101,35 @@ def cmd_interactive(config_mgr: ConfigManager, history_db: HistoryDB) -> None:
                 if confirm in ("", "y", "yes"):
                     organizer = Organizer(config_mgr.config, history_db=history_db, scanner=scanner)
                     print()
-                    res = organizer.organize(
-                        scan_result=scan_res,
-                        on_progress=lambda f, dest: print(f"   {GREEN}✔{RESET} {f.filename} → {dest.name}"),
-                        on_error=lambda f, err: print(f"   {RED}✘{RESET} {f.filename}: {err}"),
-                    )
-                    print(f"\n   {GREEN}{BOLD}Organization complete!{RESET} Moved {res.successful_moves} files.")
-                    if res.failed_moves > 0:
-                        print(f"   {RED}Warning: {res.failed_moves} files could not be moved.{RESET}")
+                    try:
+                        res = organizer.organize(
+                            scan_result=scan_res,
+                            on_progress=lambda f, dest: print(f"   {GREEN}✔{RESET} {f.filename} → {dest.name}"),
+                            on_error=lambda f, err: print(f"   {RED}✘{RESET} {f.filename}: {err}"),
+                        )
+                        print(f"\n   {GREEN}{BOLD}Organization complete!{RESET} Moved {res.successful_moves} files.")
+                        if res.failed_moves > 0:
+                            print(f"   {RED}Warning: {res.failed_moves} files could not be moved.{RESET}")
+                    except OperationLockError:
+                        print(f"\n   {RED}Another CleanDownloads organize or undo operation is currently running.{RESET}")
             input(f"\n{DIM}Press Enter to return to menu...{RESET}")
         elif choice == "3":
             print("\n")
             undo_engine = UndoEngine(history_db)
-            res_undo = undo_engine.undo_last()
-            if not res_undo:
-                print(f"   {YELLOW}No recent organization operation available to undo.{RESET}")
-            else:
-                print(f"   {GREEN}{BOLD}Undo finished:{RESET} Restored {res_undo.success_count} files.")
-                for rf in res_undo.restored_files:
-                    print(f"   {GREEN}↩{RESET} Restored: {rf.original_path.name}")
-                if res_undo.fail_count > 0:
-                    print(f"\n   {RED}Failed to restore {res_undo.fail_count} files:{RESET}")
-                    for ff in res_undo.failed_files:
-                        print(f"   {RED}✘{RESET} {ff.moved_from_path.name}: {ff.reason}")
+            try:
+                res_undo = undo_engine.undo_last()
+                if not res_undo:
+                    print(f"   {YELLOW}No recent organization operation available to undo.{RESET}")
+                else:
+                    print(f"   {GREEN}{BOLD}Undo finished:{RESET} Restored {res_undo.success_count} files.")
+                    for rf in res_undo.restored_files:
+                        print(f"   {GREEN}↩{RESET} Restored: {rf.original_path.name}")
+                    if res_undo.fail_count > 0:
+                        print(f"\n   {RED}Failed to restore {res_undo.fail_count} files:{RESET}")
+                        for ff in res_undo.failed_files:
+                            print(f"   {RED}✘{RESET} {ff.moved_from_path.name}: {ff.reason}")
+            except OperationLockError:
+                print(f"\n   {RED}Another CleanDownloads organize or undo operation is currently running.{RESET}")
             input(f"\n{DIM}Press Enter to return to menu...{RESET}")
         elif choice == "4":
             print("\n")
@@ -226,64 +232,88 @@ def cmd_organize(
     history_db: HistoryDB,
     dry_run: bool = False,
     json_mode: bool = False,
+    scheduled: bool = False,
 ) -> None:
     """Execute organization or dry run."""
     organizer = Organizer(config_mgr.config, history_db=history_db)
 
-    if json_mode:
-        res = organizer.organize(dry_run=dry_run)
-        data = {
-            "batch_id": res.batch_id,
-            "total_files": res.total_files,
-            "successful_moves": res.successful_moves,
-            "failed_moves": res.failed_moves,
-            "is_dry_run": res.is_dry_run,
-            "moved_items": [
-                {
-                    "source": str(m.source),
-                    "destination": str(m.destination),
-                    "file_size": m.file_size,
-                    "category": m.category,
-                    "operation_id": m.operation_id,
-                }
-                for m in res.moved_items
-            ],
-            "failed_items": [
-                {
-                    "source": str(f.source),
-                    "target_destination": str(f.target_destination),
-                    "error": f.error,
-                    "category": f.category,
-                }
-                for f in res.failed_items
-            ],
-        }
-        print(json.dumps(data, indent=2))
-        return
+    try:
+        if json_mode:
+            res = organizer.organize(dry_run=dry_run)
+            data = {
+                "batch_id": res.batch_id,
+                "total_files": res.total_files,
+                "successful_moves": res.successful_moves,
+                "failed_moves": res.failed_moves,
+                "is_dry_run": res.is_dry_run,
+                "moved_items": [
+                    {
+                        "source": str(m.source),
+                        "destination": str(m.destination),
+                        "file_size": m.file_size,
+                        "category": m.category,
+                        "operation_id": m.operation_id,
+                    }
+                    for m in res.moved_items
+                ],
+                "failed_items": [
+                    {
+                        "source": str(f.source),
+                        "target_destination": str(f.target_destination),
+                        "error": f.error,
+                        "category": f.category,
+                    }
+                    for f in res.failed_items
+                ],
+            }
+            print(json.dumps(data, indent=2))
+            return
 
-    print_banner()
-    if dry_run:
-        print(f"\n{YELLOW}[DRY RUN MODE — No files will be moved]{RESET}\n")
-    else:
-        print("\nOrganizing Downloads folder...\n")
+        if not scheduled:
+            print_banner()
+            if dry_run:
+                print(f"\n{YELLOW}[DRY RUN MODE — No files will be moved]{RESET}\n")
+            else:
+                print("\nOrganizing Downloads folder...\n")
 
-    res = organizer.organize(
-        dry_run=dry_run,
-        on_progress=lambda f, dest: print(f"  {GREEN}✔{RESET} {f.filename} → {dest}"),
-        on_error=lambda f, err: print(f"  {RED}✘{RESET} {f.filename}: {err}"),
-    )
+        res = organizer.organize(
+            dry_run=dry_run,
+            on_progress=lambda f, dest: print(f"  {GREEN}✔{RESET} {f.filename} → {dest}") if not scheduled else None,
+            on_error=lambda f, err: print(f"  {RED}✘{RESET} {f.filename}: {err}") if not scheduled else None,
+        )
 
-    if dry_run:
-        print(f"\n{CYAN}Dry run complete.{RESET} {res.total_files} files ready to organize.")
-    else:
-        print(f"\n{GREEN}{BOLD}Organization complete!{RESET}")
-        print(f"  Successful moves: {res.successful_moves}")
-        if res.failed_moves > 0:
-            print(f"  {RED}Failed moves:     {res.failed_moves}{RESET}")
-        if res.batch_id:
-            print(f"  {DIM}Operation Batch ID: {res.batch_id}{RESET}")
-            print(f"  {DIM}To reverse this operation, run: cleandownloads undo{RESET}")
-    print()
+        if not scheduled:
+            if dry_run:
+                print(f"\n{CYAN}Dry run complete.{RESET} {res.total_files} files ready to organize.")
+            else:
+                print(f"\n{GREEN}{BOLD}Organization complete!{RESET}")
+                print(f"  Successful moves: {res.successful_moves}")
+                if res.failed_moves > 0:
+                    print(f"  {RED}Failed moves:     {res.failed_moves}{RESET}")
+                if res.batch_id:
+                    print(f"  {DIM}Operation Batch ID: {res.batch_id}{RESET}")
+                    print(f"  {DIM}To reverse this operation, run: cleandownloads undo{RESET}")
+            print()
+    except OperationLockError:
+        if scheduled:
+            sys.exit(75)
+        if json_mode:
+            print(
+                json.dumps(
+                    {
+                        "success": False,
+                        "error": "locked",
+                        "message": "Another CleanDownloads organize or undo operation is currently running.",
+                    },
+                    indent=2,
+                )
+            )
+            sys.exit(1)
+        print(
+            f"\n{RED}Error: Another CleanDownloads organize or undo operation is currently running.{RESET}\n",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
 
 def cmd_undo(
@@ -294,10 +324,29 @@ def cmd_undo(
     """Execute undo operation."""
     undo_engine = UndoEngine(history_db)
 
-    if batch_id:
-        res = undo_engine.undo_batch(batch_id)
-    else:
-        res = undo_engine.undo_last()
+    try:
+        if batch_id:
+            res = undo_engine.undo_batch(batch_id)
+        else:
+            res = undo_engine.undo_last()
+    except OperationLockError:
+        if json_mode:
+            print(
+                json.dumps(
+                    {
+                        "success": False,
+                        "error": "locked",
+                        "message": "Another CleanDownloads organize or undo operation is currently running.",
+                    },
+                    indent=2,
+                )
+            )
+            sys.exit(1)
+        print(
+            f"\n{RED}Error: Another CleanDownloads organize or undo operation is currently running.{RESET}\n",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     if json_mode:
         if not res:
@@ -520,6 +569,9 @@ def build_parser() -> argparse.ArgumentParser:
     org_parser.add_argument(
         "--dry-run", action="store_true", help="Simulate organization without moving any files"
     )
+    org_parser.add_argument(
+        "--scheduled", action="store_true", help="Run in automated scheduled mode (exits quietly if locked)"
+    )
 
     # undo
     undo_parser = subparsers.add_parser("undo", parents=[common_parser], help="Undo previous file organization operations")
@@ -580,7 +632,13 @@ def main() -> None:
     elif args.command == "preview":
         cmd_preview(config_mgr, json_mode=json_mode)
     elif args.command == "organize":
-        cmd_organize(config_mgr, history_db, dry_run=args.dry_run, json_mode=json_mode)
+        cmd_organize(
+            config_mgr,
+            history_db,
+            dry_run=args.dry_run,
+            json_mode=json_mode,
+            scheduled=getattr(args, "scheduled", False),
+        )
     elif args.command == "undo":
         cmd_undo(history_db, batch_id=args.batch_id, json_mode=json_mode)
     elif args.command == "history":
