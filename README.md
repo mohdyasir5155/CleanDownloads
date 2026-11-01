@@ -79,11 +79,13 @@ Choose the installation method that fits your environment:
 
 ### Option 1: PowerShell Bootstrapper (Recommended)
 
-Installs the verified release to your user profile (`%LOCALAPPDATA%\Programs\CleanDownloads`) and adds it to your user `PATH`:
+Installs the verified release to your user profile (`%LOCALAPPDATA%\Programs\CleanDownloads`) and adds it to your user `PATH`. The bootstrapper enforces cryptographic integrity by validating SHA-256 against the release's `checksums.txt` (failing closed if missing or mismatched) and verifies GitHub build provenance attestation via `gh attestation verify` when the GitHub CLI is installed:
 
 ```powershell
 irm https://raw.githubusercontent.com/mohdyasir5155/CleanDownloads/main/install.ps1 | iex
 ```
+
+*(Authenticode verification is opt-in via `-RequireSignature`).*
 
 ### Option 2: Windows Setup Installer (GitHub Releases)
 

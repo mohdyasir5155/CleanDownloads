@@ -15,7 +15,10 @@ CleanDownloads is architected around **defense-in-depth**, **least privilege**, 
 +------------------------------------------------------------------------------------+
 | Layer 6: Installation & Supply Chain                                               |
 |  - HTTPS download enforcement                                                      |
-|  - Pre-extraction Zip Slip verification                                             |
+|  - Mandatory SHA-256 checksum verification from checksums.txt (fails closed)       |
+|  - GitHub build provenance attestation verification via gh CLI when available      |
+|  - Opt-in Authenticode digital signature verification (-RequireSignature)         |
+|  - Pre-extraction Zip Slip verification                                            |
 |  - User-scope installation (never requests elevation)                              |
 +------------------------------------------------------------------------------------+
                                          |

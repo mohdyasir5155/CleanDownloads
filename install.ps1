@@ -10,7 +10,7 @@
     The specific version tag to install (e.g. '1.0.0'). Defaults to 'latest'.
 
 .PARAMETER Repo
-    The GitHub repository in 'owner/repo' format. Defaults to 'mohdy/CleanDownloads'.
+    The GitHub repository in 'owner/repo' format. Defaults to 'mohdyasir5155/CleanDownloads'.
 
 .PARAMETER InstallerUrl
     Direct HTTPS URL to an installer executable. Overrides GitHub Release lookup.
@@ -22,8 +22,11 @@
     Expected SHA-256 checksum for the installer. If omitted, checksums are verified
     against the release checksums.txt.
 
+.PARAMETER RequireSignature
+    Opt-in flag requiring a valid Authenticode digital signature on the installer executable.
+
 .PARAMETER ExpectedPublisher
-    The expected Subject or CN in the Authenticode code signing certificate.
+    The expected Subject or CN in the Authenticode code signing certificate when -RequireSignature is enabled.
     Defaults to 'CleanDownloads'.
 
 .PARAMETER Silent
@@ -33,11 +36,10 @@
     Reinstall or upgrade without prompting if an existing installation is detected.
 
 .PARAMETER AllowUnsigned
-    Allows installing binaries signed with non-trusted development certificates or unsigned.
-    Recommended only for local testing and CI/CD.
+    Allows installing binaries signed with non-trusted development certificates when -RequireSignature is used.
 
 .PARAMETER SkipSignatureCheck
-    Skips the Authenticode certificate check entirely.
+    Deprecated: Authenticode signature verification is now opt-in via -RequireSignature.
 
 .EXAMPLE
     irm https://raw.githubusercontent.com/mohdyasir5155/CleanDownloads/main/install.ps1 | iex
@@ -56,6 +58,7 @@ param(
     [string]$ExpectedPublisher = "CleanDownloads",
     [switch]$Silent,
     [switch]$Force,
+    [switch]$RequireSignature,
     [switch]$AllowUnsigned,
     [switch]$SkipSignatureCheck
 )
@@ -180,10 +183,8 @@ if ($InstallerPath) {
                 }
             }
         } catch {
-            Write-Warning "Could not query GitHub Releases API ($($_.Exception.Message)). Using deterministic release URL."
-            $verTag = if ($Version -eq "latest") { "1.0.0" } else { $Version }
-            $downloadUrl = "https://github.com/$Repo/releases/download/v$verTag/CleanDownloads-Setup-$verTag.exe"
-            $targetVersion = $verTag
+            Write-Host "${Red}Error: Failed to resolve release from GitHub ($Repo): $($_.Exception.Message)${Reset}"
+            throw
         }
     }
 
@@ -223,23 +224,41 @@ if ($InstallerPath) {
 try {
     # 4. Cryptographic Integrity Verification (SHA-256)
     Write-Host "${Cyan}-->${Reset} Verifying SHA-256 file integrity..."
-    $computedHash = (Get-FileHash -Path $targetInstaller -Algorithm SHA256).Hash
-
-    if ($releaseChecksums) {
-        if ($computedHash.ToUpperInvariant() -ne $releaseChecksums.ToUpperInvariant()) {
-            Write-Host "${Red}FATAL SECURITY ERROR: SHA-256 checksum mismatch!${Reset}"
-            Write-Host "  Expected: $($releaseChecksums.ToUpperInvariant())"
-            Write-Host "  Computed: $($computedHash.ToUpperInvariant())"
-            throw "FATAL SECURITY ERROR: SHA-256 checksum mismatch (Expected: $releaseChecksums, Computed: $computedHash)"
-        }
-        Write-Host "    ${Green}SHA-256 verified successfully:${Reset} $computedHash"
-    } else {
-        Write-Host "    ${Yellow}Notice:${Reset} No reference checksum provided. Computed: $computedHash"
+    if (-not $releaseChecksums) {
+        Write-Host "${Red}FATAL SECURITY ERROR: Mandatory SHA-256 checksum is missing!${Reset}"
+        Write-Host "  Could not obtain checksum from release checksums.txt and no -ExpectedSha256 was provided."
+        Write-Host "  CleanDownloads requires cryptographic checksum verification and fails closed."
+        throw "FATAL SECURITY ERROR: Mandatory SHA-256 checksum is missing. Aborting installation."
     }
 
-    # 5. Authenticode Digital Signature Verification
-    Write-Host "${Cyan}-->${Reset} Verifying Authenticode digital signature..."
-    if (-not $SkipSignatureCheck) {
+    $computedHash = (Get-FileHash -Path $targetInstaller -Algorithm SHA256).Hash
+    if ($computedHash.ToUpperInvariant() -ne $releaseChecksums.ToUpperInvariant()) {
+        Write-Host "${Red}FATAL SECURITY ERROR: SHA-256 checksum mismatch!${Reset}"
+        Write-Host "  Expected: $($releaseChecksums.ToUpperInvariant())"
+        Write-Host "  Computed: $($computedHash.ToUpperInvariant())"
+        throw "FATAL SECURITY ERROR: SHA-256 checksum mismatch (Expected: $releaseChecksums, Computed: $computedHash)"
+    }
+    Write-Host "    ${Green}SHA-256 verified successfully:${Reset} $computedHash"
+
+    # 4b. GitHub Artifact Attestation Verification (when gh CLI is available)
+    $ghCli = Get-Command gh -ErrorAction SilentlyContinue
+    if ($ghCli) {
+        Write-Host "${Cyan}-->${Reset} Verifying GitHub artifact attestation against $Repo..."
+        try {
+            $attestOutput = & $ghCli.Source attestation verify $targetInstaller --repo $Repo 2>&1
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "    ${Green}GitHub artifact attestation verified successfully.${Reset}"
+            } else {
+                Write-Warning "GitHub artifact attestation check returned non-zero ($LASTEXITCODE): $attestOutput"
+            }
+        } catch {
+            Write-Warning "Could not verify attestation via gh CLI: $($_.Exception.Message)"
+        }
+    }
+
+    # 5. Authenticode Digital Signature Verification (Opt-in via -RequireSignature)
+    if ($RequireSignature) {
+        Write-Host "${Cyan}-->${Reset} Verifying Authenticode digital signature (-RequireSignature enabled)..."
         $sig = Get-AuthenticodeSignature -FilePath $targetInstaller
 
         if ($sig.Status -eq "Valid") {
@@ -260,11 +279,11 @@ try {
             Write-Host "${Red}FATAL SECURITY ERROR: Installer Authenticode signature is invalid or not trusted!${Reset}"
             Write-Host "  Signature Status: $($sig.Status)"
             Write-Host "  Status Message:   $($sig.StatusMessage)"
-            Write-Host "  To install anyway in development environments, use the -AllowUnsigned switch."
+            Write-Host "  To install anyway in development environments, omit -RequireSignature or use -AllowUnsigned."
             throw "FATAL SECURITY ERROR: Installer Authenticode signature is invalid or not trusted (Status: $($sig.Status))"
         }
     } else {
-        Write-Warning "Signature verification skipped via -SkipSignatureCheck."
+        Write-Host "    Authenticode signature verification is opt-in (use -RequireSignature to enforce)."
     }
 
     # 6. Execute Installer

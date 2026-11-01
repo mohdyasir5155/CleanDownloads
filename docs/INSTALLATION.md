@@ -16,11 +16,14 @@ irm https://raw.githubusercontent.com/mohdyasir5155/CleanDownloads/main/install.
 1. Detects Windows x64 environment in standard user context.
 2. Queries the latest GitHub release over HTTPS.
 3. Downloads the setup installer to a temporary location.
-4. Cryptographically verifies the SHA-256 hash against release `checksums.txt`.
-5. Verifies the Authenticode digital signature and expected publisher identity.
+4. Cryptographically verifies the mandatory SHA-256 hash against release `checksums.txt` (fails closed if missing or mismatched).
+5. If GitHub CLI (`gh`) is available, verifies build provenance attestations against the repository (`gh attestation verify`).
 6. Executes the silent non-admin installer into `%LOCALAPPDATA%\Programs\CleanDownloads`.
 7. Appends the binary folder to user `PATH` (`HKCU\Environment\Path`) and broadcasts environment change.
 8. Verifies `cleandownloads --version`.
+
+> [!NOTE]
+> **Authenticode Verification**: Authenticode verification is opt-in via `-RequireSignature` for enterprise or corporate environments requiring code signing certificate checks. By default, release binaries are verified via mandatory SHA-256 checksums and GitHub Artifact Attestation.
 
 ---
 

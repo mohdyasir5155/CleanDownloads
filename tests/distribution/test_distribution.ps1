@@ -151,32 +151,40 @@ Write-Host "${Cyan}--> Test 7: Bootstrapper Security Checks${Reset}"
 $corruptFile = Join-Path $TestWorkspace "corrupt_setup.exe"
 "CORRUPTED BINARY DATA" | Set-Content $corruptFile
 
-# A. Corrupt hash rejection
-$hashRejectionPassed = $false
+# A. Missing checksum rejection (fails closed)
+$missingChecksumPassed = $false
 try {
-    & (Join-Path $ProjectRoot "install.ps1") -InstallerPath $corruptFile -ExpectedSha256 "0000000000000000000000000000000000000000000000000000000000000000" -Silent -SkipSignatureCheck 2>$null
+    & (Join-Path $ProjectRoot "install.ps1") -InstallerPath $corruptFile -Silent 2>$null
 } catch {
-    $hashRejectionPassed = $true
+    $missingChecksumPassed = $true
 }
 
-# B. Non-HTTPS URL rejection
+# B. Corrupt / mismatched hash rejection
+$mismatchedChecksumPassed = $false
+try {
+    & (Join-Path $ProjectRoot "install.ps1") -InstallerPath $corruptFile -ExpectedSha256 "0000000000000000000000000000000000000000000000000000000000000000" -Silent 2>$null
+} catch {
+    $mismatchedChecksumPassed = $true
+}
+
+# C. Non-HTTPS URL rejection
 $httpsRejectionPassed = $false
 try {
-    & (Join-Path $ProjectRoot "install.ps1") -InstallerUrl "http://insecure-downloads.com/setup.exe" -Silent -SkipSignatureCheck 2>$null
+    & (Join-Path $ProjectRoot "install.ps1") -InstallerUrl "http://insecure-downloads.com/setup.exe" -ExpectedSha256 "0000000000000000000000000000000000000000000000000000000000000000" -Silent 2>$null
 } catch {
     $httpsRejectionPassed = $true
 }
 
-# C. Untrusted / Unexpected publisher rejection
+# D. Untrusted / Unexpected publisher rejection when -RequireSignature is requested
 $publisherRejectionPassed = $false
 try {
-    & (Join-Path $ProjectRoot "install.ps1") -InstallerPath $SetupExe -ExpectedPublisher "NonExistentMaliciousPublisher" -Silent 2>$null
+    & (Join-Path $ProjectRoot "install.ps1") -InstallerPath $SetupExe -ExpectedSha256 "0000000000000000000000000000000000000000000000000000000000000000" -RequireSignature -ExpectedPublisher "NonExistentMaliciousPublisher" -Silent 2>$null
 } catch {
     $publisherRejectionPassed = $true
 }
 
-$securityPassed = $hashRejectionPassed -and $httpsRejectionPassed -and $publisherRejectionPassed
-Record-TestResult "Bootstrapper Security Integrity Verification" $securityPassed "Mismatched Hash Rejected: $hashRejectionPassed, Insecure HTTP Rejected: $httpsRejectionPassed, Untrusted Publisher Rejected: $publisherRejectionPassed"
+$securityPassed = $missingChecksumPassed -and $mismatchedChecksumPassed -and $httpsRejectionPassed -and $publisherRejectionPassed
+Record-TestResult "Bootstrapper Security Integrity Verification" $securityPassed "Missing Checksum Rejected: $missingChecksumPassed, Mismatched Hash Rejected: $mismatchedChecksumPassed, Insecure HTTP Rejected: $httpsRejectionPassed, Untrusted Publisher Rejected: $publisherRejectionPassed"
 
 # ---------------------------------------------------------
 # Test 8: Silent Uninstallation & PATH Cleanup
