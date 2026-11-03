@@ -121,11 +121,19 @@ if (Test-Path $installedExe) {
     Write-Host "${Yellow}--> Existing installation detected:${Reset} $installedExe (v$currentVersion)"
 
     if (-not $Force -and -not $Silent) {
-        $confirm = Read-Host "    Do you want to reinstall or upgrade CleanDownloads? (y/N)"
-        if ($confirm -notmatch "^[Yy]$") {
-            Write-Host "${Dim}Installation cancelled by user.${Reset}"
-            exit 0
+        $isPiped = $false
+        try {
+            if ([Console]::IsInputRedirected) { $isPiped = $true }
+        } catch {}
+
+        if (-not $isPiped) {
+            $confirm = Read-Host "    Do you want to reinstall or upgrade CleanDownloads? (Y/n)"
+            if ($confirm -match "^[Nn]$") {
+                Write-Host "${Dim}Installation cancelled by user.${Reset}"
+                exit 0
+            }
         }
+        Write-Host "    Proceeding with upgrade/reinstall..."
     } else {
         Write-Host "    Proceeding with upgrade/reinstall..."
     }
