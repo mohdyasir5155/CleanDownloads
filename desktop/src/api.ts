@@ -29,7 +29,73 @@ async function execCleanDownloads<T>(args: string[]): Promise<T> {
   return mockHandler<T>(args);
 }
 
+// ─── Notification helpers (Tauri-native) ────────────────────────────
+
+async function scanWithNotification(): Promise<ScanResponse> {
+  if (isTauri()) {
+    const { invoke } = await import('@tauri-apps/api/core');
+    const stdout = await invoke<string>('scan_and_notify', {});
+    return JSON.parse(stdout) as ScanResponse;
+  }
+  return mockHandler<ScanResponse>(['scan']);
+}
+
+async function organizeWithNotification(dryRun: boolean): Promise<OrganizeResponse> {
+  if (isTauri()) {
+    const { invoke } = await import('@tauri-apps/api/core');
+    const stdout = await invoke<string>('organize_and_notify', { dryRun });
+    return JSON.parse(stdout) as OrganizeResponse;
+  }
+  return mockHandler<OrganizeResponse>(dryRun ? ['organize', '--dry-run'] : ['organize']);
+}
+
+async function undoWithNotification(batchId?: string): Promise<{ success: boolean; message?: string }> {
+  if (isTauri()) {
+    const { invoke } = await import('@tauri-apps/api/core');
+    const stdout = await invoke<string>('undo_and_notify', {
+      batchId: batchId ?? null,
+    });
+    return JSON.parse(stdout);
+  }
+  return mockHandler<{ success: boolean; message?: string }>(
+    batchId ? ['undo', '--batch-id', batchId] : ['undo']
+  );
+}
+
+// ─── Close-to-tray settings ────────────────────────────────────────
+
+async function setCloseToTray(enabled: boolean): Promise<void> {
+  if (isTauri()) {
+    const { invoke } = await import('@tauri-apps/api/core');
+    await invoke('set_close_to_tray', { enabled });
+  }
+}
+
+async function getCloseToTray(): Promise<boolean> {
+  if (isTauri()) {
+    const { invoke } = await import('@tauri-apps/api/core');
+    return await invoke<boolean>('get_close_to_tray');
+  }
+  return true; // default in dev
+}
+
+// ─── Send notification from frontend ───────────────────────────────
+
+async function notify(title: string, body: string): Promise<void> {
+  if (isTauri()) {
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      await invoke('send_notification', { title, body });
+    } catch (err) {
+      console.warn('Notification failed:', err);
+    }
+  }
+}
+
+// ─── Public API ────────────────────────────────────────────────────
+
 export const api = {
+  // Standard CLI commands (no notifications)
   scan: () => execCleanDownloads<ScanResponse>(['scan', '--json']),
   preview: () => execCleanDownloads<PreviewResponse>(['preview', '--json']),
   organize: (dryRun = false) =>
@@ -44,9 +110,32 @@ export const api = {
     execCleanDownloads<HistoryResponse>(['history', '--limit', limit.toString(), '--json']),
   status: () => execCleanDownloads<StatusResponse>(['status', '--json']),
   config: () => execCleanDownloads<AppConfig>(['config', '--json']),
+
+  // Commands with native Windows notifications
+  scanAndNotify: () => scanWithNotification(),
+  organizeAndNotify: (dryRun = false) => organizeWithNotification(dryRun),
+  undoAndNotify: (batchId?: string) => undoWithNotification(batchId),
+
+  // Tray / system settings
+  setCloseToTray,
+  getCloseToTray,
+
+  // Direct notification
+  notify,
+
+  // Open Downloads folder
+  openDownloadsFolder: async () => {
+    if (isTauri()) {
+      const { invoke } = await import('@tauri-apps/api/core');
+      await invoke('open_downloads_folder');
+    } else {
+      window.open('file:///C:/Users/User/Downloads', '_blank');
+    }
+  },
 };
 
-// Dev fallback for responsive browser preview
+// ─── Dev fallback for responsive browser preview ───────────────────
+
 function mockHandler<T>(args: string[]): Promise<T> {
   const cmd = args[0];
 
@@ -256,6 +345,13 @@ function mockHandler<T>(args: string[]): Promise<T> {
         { name: 'Software', category: 'Software', subfolder: 'Software/EXE', extensions: ['exe', 'msi'] },
       ],
       default_fallback_folder: 'Other',
+    } as unknown as T);
+  }
+
+  if (cmd === 'undo') {
+    return Promise.resolve({
+      success: true,
+      message: 'Batch successfully restored to original locations.',
     } as unknown as T);
   }
 

@@ -61,6 +61,9 @@ irm https://raw.githubusercontent.com/mohdyasir5155/CleanDownloads/main/install.
 
 Every feature in CleanDownloads is engineered around **safety, speed, and privacy**:
 
+- **🖥 Modern Windows Desktop GUI**: Full visual experience built with Tauri v2 and React featuring real-time statistics, category distributions, interactive file inspection, and dark/light themes without needing a terminal.
+- **🔔 Native System Tray & Flyout**: Stays accessible from the Windows taskbar tray with quick actions to scan, preview, organize, open the Downloads folder, toggle close-to-tray, and review operations.
+- **📢 Windows 10/11 Notifications**: Action Center desktop toasts alert you when scans complete, organizations succeed, or issues are detected with exact file counts.
 - **🎯 Automatic File Categorization**: Out-of-the-box recognition for 13+ standard categories and hundreds of file extensions (PDF, Word, Excel, PowerPoint, Images, Videos, Audio, Archives, Software, Code, Spreadsheets, Presentations, E-Books, and Fonts).
 - **🛡 Safe File Movement (Zero Overwrite Invariant)**: Files are never silently overwritten. Colliding filenames are resolved automatically using incremental numbers (e.g., `invoice (1).pdf`) backed by Win32 `MoveFileExW` on Windows (and atomic link/exclusive-create on POSIX).
 - **🔍 Preview & Dry-Run Mode**: Inspect exactly which files will move and where they will go with `cleandownloads preview` or `cleandownloads organize --dry-run` before any file is touched.

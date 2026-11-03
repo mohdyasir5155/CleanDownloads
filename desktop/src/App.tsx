@@ -5,7 +5,7 @@ import { PreviewView } from './components/PreviewView';
 import { HistoryView } from './components/HistoryView';
 import { RulesView } from './components/RulesView';
 import { SettingsView } from './components/SettingsView';
-import { api } from './api';
+import { api, isTauri } from './api';
 import {
   ScanResponse,
   StatusResponse,
@@ -13,7 +13,7 @@ import {
   RuleConfig,
   AppConfig,
 } from './types';
-import { Check, AlertCircle, X } from 'lucide-react';
+import { Check, AlertCircle, X, Info } from 'lucide-react';
 
 interface Toast {
   id: string;
@@ -33,6 +33,7 @@ export const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isOrganizing, setIsOrganizing] = useState<boolean>(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [closeToTray, setCloseToTray] = useState<boolean>(true);
 
   const addToast = (type: 'success' | 'error' | 'info', message: string) => {
     const id = Math.random().toString(36).substring(2, 9);
@@ -63,9 +64,71 @@ export const App: React.FC = () => {
     }
   }, []);
 
+  // Initialize close-to-tray setting
+  useEffect(() => {
+    api.getCloseToTray().then(setCloseToTray);
+  }, []);
+
   useEffect(() => {
     loadAllData();
   }, [loadAllData]);
+
+  // ── Tray menu event listener ─────────────────────────────────────
+  useEffect(() => {
+    if (!isTauri()) return;
+
+    let unlisten: (() => void) | undefined;
+
+    (async () => {
+      const { listen } = await import('@tauri-apps/api/event');
+
+      unlisten = await listen<string>('tray-action', (event) => {
+        const action = event.payload;
+        switch (action) {
+          case 'scan':
+            setCurrentTab('dashboard');
+            handleScanWithNotify();
+            break;
+          case 'preview':
+            setCurrentTab('preview');
+            break;
+          case 'organize':
+            setCurrentTab('preview');
+            // Don't auto-organize from tray — show preview first for safety
+            addToast('info', 'Review files before organizing. Safety first!');
+            break;
+          case 'settings':
+            setCurrentTab('settings');
+            break;
+          default:
+            break;
+        }
+      });
+    })();
+
+    return () => {
+      unlisten?.();
+    };
+  }, []);
+
+  // ── Single-instance event listener ───────────────────────────────
+  useEffect(() => {
+    if (!isTauri()) return;
+
+    let unlisten: (() => void) | undefined;
+
+    (async () => {
+      const { listen } = await import('@tauri-apps/api/event');
+      unlisten = await listen('single-instance', () => {
+        // Another instance tried to open — we're already focused by Rust
+        addToast('info', 'CleanDownloads is already running.');
+      });
+    })();
+
+    return () => {
+      unlisten?.();
+    };
+  }, []);
 
   // Global Keyboard Navigation
   useEffect(() => {
@@ -93,11 +156,39 @@ export const App: React.FC = () => {
     }
   }, [isDarkMode]);
 
+  // ── Scan with notification ───────────────────────────────────────
+  const handleScanWithNotify = async () => {
+    setIsLoading(true);
+    try {
+      const scanRes = await api.scanAndNotify();
+      setScanData(scanRes);
+      // Also refresh other data
+      const [statusRes, historyRes, configRes] = await Promise.all([
+        api.status(),
+        api.history(20),
+        api.config(),
+      ]);
+      setStatusData(statusRes);
+      setBatches(historyRes.batches);
+      setConfig(configRes);
+      addToast(
+        'success',
+        scanRes.total_ready > 0
+          ? `Scan complete — ${scanRes.total_ready} files ready to organize.`
+          : 'Downloads folder is already clean!'
+      );
+    } catch (err) {
+      addToast('error', `Scan failed: ${err}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleOrganize = async () => {
     if (!scanData || scanData.total_ready === 0) return;
     setIsOrganizing(true);
     try {
-      const res = await api.organize(false);
+      const res = await api.organizeAndNotify(false);
       addToast(
         'success',
         `Organized ${res.successful_moves} files safely! Zero clutter.`
@@ -117,7 +208,7 @@ export const App: React.FC = () => {
   const handleUndoBatch = async (batchId: string) => {
     setIsLoading(true);
     try {
-      await api.undo(batchId);
+      await api.undoAndNotify(batchId);
       addToast('success', 'Batch successfully restored to original locations.');
       await loadAllData();
     } catch (err) {
@@ -145,6 +236,11 @@ export const App: React.FC = () => {
     addToast('info', 'Reset settings to factory defaults.');
   };
 
+  const handleToggleCloseToTray = async (enabled: boolean) => {
+    setCloseToTray(enabled);
+    await api.setCloseToTray(enabled);
+  };
+
   return (
     <div style={{ display: 'flex', width: '100vw', height: '100vh', background: 'var(--bg-primary)' }}>
       {/* Navigation Sidebar */}
@@ -163,9 +259,10 @@ export const App: React.FC = () => {
             scanData={scanData}
             statusData={statusData}
             isLoading={isLoading}
-            onRefreshScan={loadAllData}
+            onRefreshScan={handleScanWithNotify}
             onOrganize={handleOrganize}
             onGoToPreview={() => setCurrentTab('preview')}
+            onOpenDownloadsFolder={() => api.openDownloadsFolder()}
           />
         )}
 
@@ -198,6 +295,8 @@ export const App: React.FC = () => {
             status={statusData}
             onSaveConfig={handleSaveConfig}
             onResetDefaults={handleResetDefaults}
+            closeToTray={closeToTray}
+            onToggleCloseToTray={handleToggleCloseToTray}
           />
         )}
 
@@ -216,7 +315,7 @@ export const App: React.FC = () => {
           {toasts.map((t) => (
             <div
               key={t.id}
-              className="glass-panel"
+              className="glass-panel animate-fade-in"
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -233,6 +332,7 @@ export const App: React.FC = () => {
             >
               {t.type === 'success' && <Check size={16} color="var(--accent-emerald)" />}
               {t.type === 'error' && <AlertCircle size={16} color="var(--accent-rose)" />}
+              {t.type === 'info' && <Info size={16} color="var(--accent-cyan)" />}
               <span>{t.message}</span>
               <button
                 onClick={() => setToasts((prev) => prev.filter((item) => item.id !== t.id))}

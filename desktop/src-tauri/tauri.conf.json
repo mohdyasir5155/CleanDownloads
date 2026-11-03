@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "CleanDownloads",
         "width": 1050,
         "height": 720,

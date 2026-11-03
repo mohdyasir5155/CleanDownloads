@@ -7,6 +7,8 @@ interface SettingsViewProps {
   status: StatusResponse | null;
   onSaveConfig: (updated: Partial<AppConfig>) => void;
   onResetDefaults: () => void;
+  closeToTray?: boolean;
+  onToggleCloseToTray?: (enabled: boolean) => Promise<void> | void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -14,8 +16,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   status,
   onSaveConfig,
   onResetDefaults,
+  closeToTray = true,
+  onToggleCloseToTray,
 }) => {
   const [recursive, setRecursive] = useState(config?.recursive ?? false);
+  const [trayClose, setTrayClose] = useState(closeToTray);
   const [schedulerFreq, setSchedulerFreq] = useState('hourly');
   const [isSaved, setIsSaved] = useState(false);
 
@@ -98,6 +103,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <div style={{ fontSize: 13, fontWeight: 600 }}>Enable Recursive Scanning</div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                   Default is disabled (organizes root files only). Enabling will organize subfolders while keeping excluded category folders protected.
+                </div>
+              </div>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={trayClose}
+                onChange={(e) => {
+                  const val = e.target.checked;
+                  setTrayClose(val);
+                  onToggleCloseToTray?.(val);
+                }}
+                style={{ marginTop: 3 }}
+              />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>Close to System Tray</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                  When enabled, closing the window keeps CleanDownloads running in the background Windows system tray.
                 </div>
               </div>
             </label>

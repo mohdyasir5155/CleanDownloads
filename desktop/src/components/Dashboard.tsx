@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   FolderCheck,
   RefreshCw,
@@ -12,6 +11,7 @@ import {
   Code2,
   HardDrive,
   CheckCircle2,
+  FolderOpen,
 } from 'lucide-react';
 import { ScanResponse, StatusResponse } from '../types';
 
@@ -22,6 +22,7 @@ interface DashboardProps {
   onRefreshScan: () => void;
   onOrganize: () => void;
   onGoToPreview: () => void;
+  onOpenDownloadsFolder?: () => void;
 }
 
 const categoryIcons: Record<string, React.ReactNode> = {
@@ -41,6 +42,8 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
+import React from 'react';
+
 export const Dashboard: React.FC<DashboardProps> = ({
   scanData,
   statusData,
@@ -48,6 +51,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onRefreshScan,
   onOrganize,
   onGoToPreview,
+  onOpenDownloadsFolder,
 }) => {
   const readyCount = scanData?.total_ready ?? 0;
   const readyBytes = scanData?.total_ready_bytes ?? 0;
@@ -71,6 +75,27 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         <div style={{ display: 'flex', gap: 10 }}>
+          {onOpenDownloadsFolder && (
+            <button
+              onClick={onOpenDownloadsFolder}
+              className="btn-secondary"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '9px 14px',
+                borderRadius: 7,
+                fontSize: 13,
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}
+              title="Open Downloads in Windows Explorer"
+            >
+              <FolderOpen size={14} />
+              <span>Open Folder</span>
+            </button>
+          )}
+
           <button
             onClick={onRefreshScan}
             disabled={isLoading}
