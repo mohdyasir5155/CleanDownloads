@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CleanDownloads — Fast, Safe Windows Downloads Folder Organizer</title>
+  
+  <!-- SEO & Social Metadata -->
+  <meta name="description" content="CleanDownloads automatically organizes your chaotic Windows Downloads folder into tidy, categorized directories. Zero deletions, collision-safe moves, offline, open-source, with instant 1-command undo.">
+  <meta name="keywords" content="CleanDownloads, windows downloads organizer, file organizer cli, clean downloads folder, powershell file organizer, zero delete file sorter, open source file manager">
+  <meta name="author" content="mohdyasir5155">
+  <meta name="theme-color" content="#FFF6E5">
+  <link rel="canonical" href="https://cleanyourdownloads.web.app/">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://cleanyourdownloads.web.app/">
+  <meta property="og:title" content="CleanDownloads — Fix your messy Downloads folder in one command">
+  <meta property="og:description" content="Tidy your Windows Downloads folder into sorted categories. Previews every move, never overwrites or deletes, and undoes instantly. 100% offline & open-source.">
+  <meta property="og:image" content="https://cleanyourdownloads.web.app/assets/video-poster.png">
+  <meta property="og:site_name" content="CleanDownloads">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="CleanDownloads — Windows Downloads Folder Organizer">
+  <meta name="twitter:description" content="Sort invoices, screenshots, installers, and archives into tidy folders with zero deletions and 1-command undo.">
+  <meta name="twitter:image" content="https://cleanyourdownloads.web.app/assets/video-poster.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+  <!-- Google Fonts Preconnect & Stylesheet -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- JSON-LD Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "CleanDownloads",
+    "operatingSystem": "Windows 10, Windows 11",
+    "applicationCategory": "UtilitiesApplication",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "description": "Safe, open-source Windows CLI tool to clean and categorize your Downloads folder with zero deletions, hash-checked undo, and dry-run previews.",
+    "url": "https://cleanyourdownloads.web.app/",
+    "downloadUrl": "https://github.com/mohdyasir5155/CleanDownloads/releases/latest",
+    "author": {
+      "@type": "Person",
+      "name": "mohdyasir5155",
+      "url": "https://github.com/mohdyasir5155"
+    }
+  }
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; padding: 0; background: #FFF6E5; color: #111; font: 400 17px/1.55 Inter, system-ui, -apple-system, sans-serif; overflow-x: hidden; }
+    a { color: #111; text-decoration: none; }
+    a:focus-visible, button:focus-visible { outline: 3px solid #111; outline-offset: 3px; }
+
+    .pg { background: #FFF6E5; color: #111; min-height: 100vh; }
+    .sec { max-width: 1200px; margin: 0 auto; padding: 80px 24px 0; }
+    .h2 { margin: 0; font: 800 clamp(32px, 5vw, 54px)/1.05 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em; }
+    .sub { margin: 14px 0 0; font-size: 19px; color: #2A2A2A; max-width: 660px; line-height: 1.5; }
+    .g { margin-top: 36px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+
+    /* Neobrutalist Cards */
+    .card {
+      border: 2.5px solid #111;
+      border-radius: 20px;
+      background: #fff;
+      padding: 24px;
+      box-shadow: 5px 5px 0 #111;
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .card:hover {
+      transform: translate(-3px, -3px) rotate(-0.4deg);
+      box-shadow: 8px 8px 0 #111;
+    }
+    .card h3 { margin: 12px 0 6px; font: 800 21px/1.2 'Bricolage Grotesque', sans-serif; }
+    .card p { margin: 0; font-size: 15.5px; color: #2A2A2A; }
+
+    /* Icons */
+    .ic {
+      width: 46px;
+      height: 46px;
+      border: 2.5px solid #111;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .ic svg {
+      width: 24px;
+      height: 24px;
+      stroke: #111;
+      fill: none;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 2.5px solid #111;
+      border-radius: 999px;
+      padding: 13px 24px;
+      min-height: 48px;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 4px 4px 0 #111;
+      transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease;
+    }
+    .btn:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0 #111;
+    }
+    .btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0 #111;
+    }
+
+    /* Chips */
+    .chip {
+      display: inline-block;
+      border: 2px solid #111;
+      border-radius: 999px;
+      padding: 6px 14px;
+      font: 600 14px 'JetBrains Mono', monospace;
+      background: #fff;
+      transition: transform .15s ease;
+    }
+    .chip:hover {
+      transform: rotate(-3deg) scale(1.05);
+    }
+
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .88em;
+      background: #EDE6FF;
+      border-radius: 6px;
+      padding: 2px 6px;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+
+    /* Stickers */
+    .stk {
+      position: absolute;
+      border: 2.5px solid #111;
+      border-radius: 14px;
+      padding: 8px 14px;
+      font: 800 14.5px 'Bricolage Grotesque', sans-serif;
+      box-shadow: 3px 3px 0 #111;
+      animation: cd-wig 3.5s ease-in-out infinite;
+      user-select: none;
+    }
+
+    /* Tables & Rows */
+    .row {
+      display: grid;
+      grid-template-columns: minmax(180px, 250px) 1fr;
+      gap: 16px;
+      align-items: center;
+      padding: 14px 20px;
+      border-bottom: 2px dashed #111;
+    }
+    .row:last-child { border-bottom: 0; }
+
+    /* Marquees */
+    .mq {
+      overflow: hidden;
+      background: #111;
+      color: #D4FF3F;
+      border-bottom: 2.5px solid #111;
+      user-select: none;
+    }
+    .mq div {
+      display: flex;
+      width: max-content;
+      animation: cd-mq 65s linear infinite;
+    }
+    .mq span {
+      padding: 11px 28px;
+      font: 700 14px 'JetBrains Mono', monospace;
+      white-space: nowrap;
+      letter-spacing: 0.04em;
+    }
+    .mq.rev {
+      border-top: 2.5px solid #111;
+      border-bottom: 0;
+      background: #D4FF3F;
+      color: #111;
+    }
+    .mq.rev div {
+      animation-direction: reverse;
+      animation-duration: 50s;
+    }
+
+    /* Keyframes */
+    @keyframes cd-mq { to { transform: translateX(-50%); } }
+    @keyframes cd-wig { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(3deg) translateY(-4px); } }
+    @keyframes cd-wig2 { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg) scale(1.02); } }
+    @keyframes cd-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+    @keyframes cd-drift { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(16px, -18px); } }
+    @keyframes cd-spin2 { to { transform: rotate(360deg); } }
+    @keyframes cd-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    @keyframes cd-ring {
+      0%, 100% { box-shadow: 4px 4px 0 #111, 0 0 0 0 rgba(212, 255, 63, .9); }
+      50% { box-shadow: 4px 4px 0 #111, 0 0 0 14px rgba(212, 255, 63, 0); }
+    }
+    @keyframes cd-prog { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+    /* Scroll progress bar */
+    .cd-prog {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: #FF3EA5;
+      border-bottom: 2px solid #111;
+      transform-origin: left;
+      z-index: 100;
+      transform: scaleX(0);
+    }
+
+    /* Hero decorations */
+    #top { position: relative; }
+    #top > div { position: relative; z-index: 1; }
+    #top::before {
+      content: "";
+      position: absolute;
+      z-index: 0;
+      width: 70px;
+      height: 70px;
+      border: 2.5px solid #111;
+      border-radius: 50%;
+      background: #FF8FD0;
+      right: 48%;
+      top: 18px;
+      animation: cd-drift 9s ease-in-out infinite;
+    }
+    #top::after {
+      content: "";
+      position: absolute;
+      z-index: 0;
+      width: 54px;
+      height: 54px;
+      border: 2.5px solid #111;
+      border-radius: 14px;
+      background: #8FD3FF;
+      left: 46%;
+      bottom: 6px;
+      animation: cd-spin2 14s linear infinite;
+    }
+    #top h1 span {
+      display: inline-block;
+      animation: cd-wig2 4s ease-in-out 1s infinite;
+    }
+    #top .btn-hero {
+      background: #D4FF3F;
+      animation: cd-ring 2.4s ease-out 1.5s infinite;
+    }
+    #top .btn-hero:hover { animation: none; }
+    .cd-caret {
+      display: inline-block;
+      width: 8px;
+      height: 15px;
+      background: #D4FF3F;
+      vertical-align: -2px;
+      margin-left: 4px;
+      animation: cd-blink 1s steps(1) infinite;
+    }
+
+    /* Terminal Switcher Buttons */
+    .term-btn {
+      background: #2A2A2E;
+      color: #bbb;
+      border: 1px solid #444;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font: 600 12px 'JetBrains Mono', monospace;
+      cursor: pointer;
+      transition: all .15s ease;
+    }
+    .term-btn.active, .term-btn:hover {
+      background: #D4FF3F;
+      color: #111;
+      border-color: #D4FF3F;
+    }
+
+    /* Mobile Navigation */
+    .nav-toggle {
+      display: none;
+      background: #fff;
+      border: 2.5px solid #111;
+      border-radius: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font: 700 18px 'Bricolage Grotesque', sans-serif;
+      box-shadow: 3px 3px 0 #111;
+    }
+    @media (max-width: 860px) {
+      .nav-toggle { display: block; }
+      .site-nav {
+        display: none !important;
+        position: absolute;
+        top: 80px;
+        left: 20px;
+        right: 20px;
+        background: #FFF6E5;
+        border: 2.5px solid #111;
+        border-radius: 18px;
+        box-shadow: 6px 6px 0 #111;
+        padding: 24px;
+        flex-direction: column;
+        gap: 16px;
+        z-index: 99;
+      }
+      .site-nav.open { display: flex !important; }
+      #top::before, #top::after { display: none; }
+      .row { grid-template-columns: 1fr; gap: 6px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+      .mq div { animation: cd-mq 140s linear infinite !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="pg">
+  <!-- Scroll Progress Indicator -->
+  <div class="cd-prog" id="progressBar" aria-hidden="true"></div>
+
+  <!-- Top Marquee -->
+  <div class="mq" aria-label="Key Product Guarantees">
+    <div>
+      <span>ZERO DELETIONS</span><span>•</span>
+      <span>100% OFFLINE</span><span>•</span>
+      <span>UNDO ANYTIME</span><span>•</span>
+      <span>NO ADMIN NEEDED</span><span>•</span>
+      <span>FREE &amp; OPEN SOURCE</span><span>•</span>
+      <span>ZERO TELEMETRY</span><span>•</span>
+      <span>WINDOWS 10 &amp; 11</span><span>•</span>
+      <span>ZERO DELETIONS</span><span>•</span>
+      <span>100% OFFLINE</span><span>•</span>
+      <span>UNDO ANYTIME</span><span>•</span>
+      <span>NO ADMIN NEEDED</span><span>•</span>
+      <span>FREE &amp; OPEN SOURCE</span><span>•</span>
+      <span>ZERO TELEMETRY</span><span>•</span>
+      <span>WINDOWS 10 &amp; 11</span><span>•</span>
+    </div>
+  </div>
+
+  <!-- Site Navigation -->
+  <header class="sec" style="padding-top:20px;position:relative;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+      <a href="#top" style="display:flex;align-items:center;gap:10px;font:800 22px 'Bricolage Grotesque',sans-serif;" aria-label="CleanDownloads Home">
+        <span class="ic" style="background:#D4FF3F;width:40px;height:40px">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <path d="m9 13 2 2 4-4"></path>
+          </svg>
+        </span>
+        CleanDownloads
+      </a>
+
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation menu" aria-expanded="false">Menu ☰</button>
+
+      <nav class="site-nav" id="siteNav" style="display:flex;flex-wrap:wrap;gap:20px;align-items:center;font-weight:600;font-size:15px">
+        <a href="#what">What it does</a>
+        <a href="#demo">Demo</a>
+        <a href="#compare">Compare</a>
+        <a href="#features">Features</a>
+        <a href="#commands">Commands</a>
+        <a href="#safety">Safety</a>
+        <a href="#install">Install</a>
+        <a href="#maker">Maker</a>
+        <a class="btn" href="https://github.com/mohdyasir5155/CleanDownloads" target="_blank" rel="noopener noreferrer" style="background:#111;color:#fff;padding:9px 18px;min-height:auto;box-shadow:3px 3px 0 #D4FF3F">GitHub ⭐</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section id="top" class="sec" style="padding-top:56px;">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:56px">
+      <div style="flex:1 1 460px;min-width:0">
+        <span class="chip" style="background:#FF8FD0">v1.0.0 · Windows 10 | 11 · MIT</span>
+        <h1 style="margin:20px 0 0;font:800 clamp(44px,7vw,84px)/0.98 'Bricolage Grotesque',sans-serif;letter-spacing:-0.04em">
+          Your Downloads folder is <span style="background:#D4FF3F;padding:0 10px;border-radius:12px;border:2.5px solid #111">chaos.</span> Fix it in one command.
+        </h1>
+        <p class="sub" style="font-size:21px">
+          CleanDownloads sorts your messy Windows Downloads into tidy folders. It shows you the plan first, never deletes anything, and you can undo it in one go.
+        </p>
+        
+        <div style="margin-top:28px;display:flex;flex-wrap:wrap;gap:14px">
+          <a class="btn btn-hero" href="https://github.com/mohdyasir5155/CleanDownloads/releases/latest" target="_blank" rel="noopener noreferrer">Download for Windows</a>
+          <a class="btn" href="https://github.com/mohdyasir5155/CleanDownloads" target="_blank" rel="noopener noreferrer" style="background:#fff">View source</a>
+        </div>
+
+        <!-- One-Liner PowerShell Snippet -->
+        <div style="margin-top:26px;background:#111;border:2px solid #333;border-radius:16px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:600px;box-shadow:4px 4px 0 #111;">
+          <code id="cmdSnippet" style="background:none;color:#D4FF3F;font-size:13px;overflow-x:auto;white-space:nowrap;padding:0;border:0;">irm https://raw.githubusercontent.com/mohdyasir5155/CleanDownloads/main/install.ps1 | iex</code>
+          <button id="copyBtn" aria-label="Copy install command" style="flex:none;background:#D4FF3F;color:#111;border:0;border-radius:10px;padding:10px 16px;font:700 13px Inter,sans-serif;cursor:pointer;transition:transform 0.15s ease, background-color 0.2s ease;">Copy</button>
+        </div>
+        <p style="margin:10px 0 0;font-size:14px;color:#2A2A2A">Paste into PowerShell. No admin rights. 5 seconds.</p>
+      </div>
+
+      <!-- Interactive Terminal Card -->
+      <div style="flex:1 1 440px;min-width:0;position:relative;padding:20px 0">
+        <span class="stk" style="top:-6px;right:12px;background:#FFE14D;z-index:2">no cap: nothing gets deleted</span>
+        <span class="stk" style="bottom:-6px;left:8px;background:#8FD3FF;z-index:2;animation-delay:-1.5s">undo = one command</span>
+
+        <div style="background:#0E0E10;border:2.5px solid #111;border-radius:20px;box-shadow:8px 8px 0 #C9B6FF;overflow:hidden">
+          <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;padding:12px 16px;background:#222;border-bottom:1px solid #333;">
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span style="width:12px;height:12px;border-radius:50%;background:#FF8FD0"></span>
+              <span style="width:12px;height:12px;border-radius:50%;background:#FFE14D"></span>
+              <span style="width:12px;height:12px;border-radius:50%;background:#D4FF3F"></span>
+              <span style="margin-left:8px;font:400 12px 'JetBrains Mono',monospace;color:#ccc">PowerShell</span>
+            </div>
+            <!-- Clickable Interactive Tabs -->
+            <div style="display:flex;gap:6px;">
+              <button class="term-btn active" data-cmd="preview" aria-label="Preview terminal tab">preview</button>
+              <button class="term-btn" data-cmd="organize" aria-label="Organize terminal tab">organize</button>
+              <button class="term-btn" data-cmd="undo" aria-label="Undo terminal tab">undo</button>
+            </div>
+          </div>
+          
+          <pre id="terminalOutput" style="margin:0;padding:22px 20px;font:400 13.5px/1.75 'JetBrains Mono',monospace;color:#E8E8E8;overflow-x:auto"><span style="color:#D4FF3F">PS&gt;</span> cleandownloads preview
+invoice_october.pdf     → Documents/PDF
+screenshot_01.png       → Images/PNG
+project_backup.zip      → Archives/ZIP
+vscode_setup.exe        → Software/EXE
+automation_script.py    → Code/Python
+
+<span style="color:#8FD3FF">Plan generated:</span> 5 files to sort. 0 collisions.
+<span style="color:#888">[Run 'cleandownloads organize' to apply]</span><span class="cd-caret"></span></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- What it does -->
+  <section id="what" class="sec">
+    <h2 class="h2">What does it do? Literally 3 things.</h2>
+    <p class="sub">Over time Downloads fills up with invoices, screenshots, installers and zips. CleanDownloads cleans it up for you, safely.</p>
+    <div class="g">
+      <div class="card" style="background:#FFE14D">
+        <div class="ic" style="background:#fff">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h6"></path></svg>
+        </div>
+        <h3>1. It sorts</h3>
+        <p>Looks at each loose file in Downloads and files it into the right folder: Documents, Images, Software, Code and more.</p>
+      </div>
+
+      <div class="card" style="background:#8FD3FF">
+        <div class="ic" style="background:#fff">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        </div>
+        <h3>2. It shows you first</h3>
+        <p>Run <code>preview</code> to see every planned move. Nothing happens until you say so.</p>
+      </div>
+
+      <div class="card" style="background:#FF8FD0">
+        <div class="ic" style="background:#fff">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"></path><path d="M4 9h10a6 6 0 0 1 0 12h-3"></path></svg>
+        </div>
+        <h3>3. It can undo</h3>
+        <p>Changed your mind? Run <code>undo</code> and every file goes back where it started.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Video Section -->
+  <section id="demo" class="sec" style="text-align:center">
+    <h2 class="h2">Watch it work.</h2>
+    <p class="sub" style="margin-left:auto;margin-right:auto">Scan, preview, organize, undo. All in one terminal.</p>
+    <div class="card" style="margin:36px auto 0;max-width:960px;padding:12px;background:#C9B6FF;box-shadow:8px 8px 0 #111">
+      <video controls playsinline loop preload="metadata" poster="assets/video-poster.png" aria-label="CleanDownloads terminal demo walkthrough" style="display:block;width:100%;height:auto;border-radius:12px;border:2.5px solid #111;background:#0E0E10">
+        <source src="assets/cleandownloads-demo.mp4" type="video/mp4">
+        Your browser does not support the video tag. You can view the demo directly on GitHub.
+      </video>
+    </div>
+  </section>
+
+  <!-- Before vs After -->
+  <section id="compare" class="sec">
+    <h2 class="h2">Before vs after.</h2>
+    <div class="g" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">
+      <div class="card">
+        <span class="chip" style="background:#FF8FD0">Before: the mess</span>
+        <pre style="margin:14px 0 0;font:400 14px/1.7 'JetBrains Mono',monospace;overflow-x:auto">Downloads/
+├── annual_report_2026.docx
+├── invoice_october.pdf
+├── screenshot_01.png
+├── project_backup.zip
+├── vscode_setup.exe
+├── video_tutorial.mp4
+├── podcast_episode.mp3
+├── automation_script.py
+├── financial_model.xlsx
+└── book_reference.epub</pre>
+      </div>
+
+      <div class="card" style="background:#D4FF3F">
+        <span class="chip">After: organized</span>
+        <pre style="margin:14px 0 0;font:400 14px/1.7 'JetBrains Mono',monospace;overflow-x:auto">Downloads/
+├── Documents/
+│   ├── PDF/invoice_october.pdf
+│   └── Word/annual_report_2026.docx
+├── Images/PNG/screenshot_01.png
+├── Archives/ZIP/project_backup.zip
+├── Software/EXE/vscode_setup.exe
+├── Media/ video_tutorial.mp4
+│         podcast_episode.mp3
+├── Code/Python/automation_script.py
+├── Spreadsheets/financial_model.xlsx
+└── E-Books/book_reference.epub</pre>
+      </div>
+    </div>
+    
+    <p style="margin:20px 0 10px;font-weight:700">Recognized categories (13+, hundreds of extensions):</p>
+    <div style="display:flex;flex-wrap:wrap;gap:10px">
+      <span class="chip">PDF</span><span class="chip">Word</span><span class="chip">Excel</span>
+      <span class="chip">PowerPoint</span><span class="chip">Images</span><span class="chip">Videos</span>
+      <span class="chip">Audio</span><span class="chip">Archives</span><span class="chip">Software</span>
+      <span class="chip">Code</span><span class="chip">Spreadsheets</span><span class="chip">Presentations</span>
+      <span class="chip">E-Books</span><span class="chip">Fonts</span><span class="chip" style="background:#FFE14D">Other (fallback)</span>
+    </div>
+  </section>
+
+  <!-- Features Grid -->
+  <section id="features" class="sec">
+    <h2 class="h2">All the receipts.</h2>
+    <p class="sub">Every feature in the repo, in plain words.</p>
+    <div class="g">
+      <div class="card"><h3>Auto categorization</h3><p>13+ categories, hundreds of file types. Knows <code>.tar.gz</code> from <code>.gz</code>.</p></div>
+      <div class="card"><h3>Zero-overwrite moves</h3><p>Same filename? You get <code>invoice (1).pdf</code>. Backed by Win32 <code>MoveFileExW</code>, so nothing is replaced.</p></div>
+      <div class="card"><h3>Preview and dry-run</h3><p><code>cleandownloads preview</code> or <code>organize --dry-run</code> shows the plan without touching a file.</p></div>
+      <div class="card"><h3>Undo with proof</h3><p>Every move is saved to a local SQLite history with a SHA-256 hash, so <code>undo</code> can check the file is untouched.</p></div>
+      <div class="card"><h3>Download and lock protection</h3><p>Skips <code>.crdownload</code>, <code>.part</code>, <code>.tmp</code>, <code>.opdownload</code>, <code>.aria2</code> and files another app has locked.</p></div>
+      <div class="card"><h3>Auto-clean on a schedule</h3><p>Optional Windows Task Scheduler job: <code>schedule --enable hourly</code>.</p></div>
+      <div class="card"><h3>Your rules</h3><p>Custom categories, subfolders, ignored extensions and size limits in one JSON file.</p></div>
+      <div class="card"><h3>100% local</h3><p>No network requests, no telemetry. Filenames and contents never leave your PC.</p></div>
+      <div class="card"><h3>One file, no setup</h3><p>Ships as a standalone <code>cleandownloads.exe</code>. No Python needed.</p></div>
+    </div>
+  </section>
+
+  <!-- Commands Reference -->
+  <section id="commands" class="sec">
+    <h2 class="h2">The whole command list.</h2>
+    <p class="sub">Type <code>cleandownloads</code> for the interactive menu, or run these directly in PowerShell or CMD.</p>
+    <div class="card" style="margin-top:36px;padding:6px 0;background:#fff">
+      <div class="row"><code>cleandownloads status</code><span>Check setup and history stats</span></div>
+      <div class="row"><code>cleandownloads scan</code><span>See what is in Downloads, broken down by type</span></div>
+      <div class="row"><code>cleandownloads preview</code><span>Show planned moves, touch nothing</span></div>
+      <div class="row"><code>organize --dry-run</code><span>Simulate a full run</span></div>
+      <div class="row"><code>cleandownloads organize</code><span>Actually sort the files</span></div>
+      <div class="row"><code>cleandownloads history</code><span>See recent organize runs</span></div>
+      <div class="row"><code>cleandownloads undo</code><span>Reverse the latest batch</span></div>
+      <div class="row"><code>schedule --enable hourly</code><span>Auto-organize every hour</span></div>
+      <div class="row"><code>cleandownloads config</code><span>View or reset settings (<code>--json</code>, <code>--reset</code>)</span></div>
+    </div>
+  </section>
+
+  <!-- Under the hood -->
+  <section id="how" class="sec">
+    <h2 class="h2">Under the hood: 7 steps.</h2>
+    <div class="g" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
+      <div class="card" style="background:#FFE14D"><b>01 Scan</b><p>Root of Downloads only. Subfolders stay untouched.</p></div>
+      <div class="card" style="background:#8FD3FF"><b>02 Filter</b><p>Skip hidden, system, locked, in-progress and symlinked files.</p></div>
+      <div class="card" style="background:#FF8FD0"><b>03 Classify</b><p>Match extensions to classification rules.</p></div>
+      <div class="card" style="background:#C9B6FF"><b>04 Plan</b><p>Preview moves, number any duplicate names.</p></div>
+      <div class="card" style="background:#D4FF3F"><b>05 Move</b><p>Atomic Win32 move, zero overwrites.</p></div>
+      <div class="card" style="background:#FFE14D"><b>06 Record</b><p>Paths, times and SHA-256 saved to history.db.</p></div>
+      <div class="card" style="background:#8FD3FF"><b>07 Undo</b><p>Verify the hash, restore the original spot.</p></div>
+    </div>
+  </section>
+
+  <!-- Safety Guarantees -->
+  <section id="safety" class="sec">
+    <div style="background:#111;color:#fff;border-radius:28px;padding:48px 28px;box-shadow:8px 8px 0 #D4FF3F">
+      <h2 class="h2" style="color:#D4FF3F">Safe by design.</h2>
+      <p class="sub" style="color:#ddd">Your files never leave your machine. Here is what is guaranteed.</p>
+      <div class="g">
+        <div class="card" style="background:#1C1C1F;color:#fff;border-color:#D4FF3F;box-shadow:5px 5px 0 #D4FF3F">
+          <h3>Zero deletion</h3>
+          <p style="color:#ddd">No unlink, remove or purge code for user files anywhere in the core engine.</p>
+        </div>
+        <div class="card" style="background:#1C1C1F;color:#fff;border-color:#D4FF3F;box-shadow:5px 5px 0 #D4FF3F">
+          <h3>No overwrites</h3>
+          <p style="color:#ddd">Collisions get renamed atomically by the operating system (e.g. <code>report (1).pdf</code>).</p>
+        </div>
+        <div class="card" style="background:#1C1C1F;color:#fff;border-color:#D4FF3F;box-shadow:5px 5px 0 #D4FF3F">
+          <h3>Path containment</h3>
+          <p style="color:#ddd">Rejects <code>..</code> traversal escapes and reserved Windows device names (CON, PRN, AUX, NUL).</p>
+        </div>
+        <div class="card" style="background:#1C1C1F;color:#fff;border-color:#D4FF3F;box-shadow:5px 5px 0 #D4FF3F">
+          <h3>Hash-checked undo</h3>
+          <p style="color:#ddd">Checks SHA-256 signatures before undoing moves, ensuring only pristine files restore.</p>
+        </div>
+        <div class="card" style="background:#1C1C1F;color:#fff;border-color:#D4FF3F;box-shadow:5px 5px 0 #D4FF3F">
+          <h3>Fully offline</h3>
+          <p style="color:#ddd">Zero analytics, zero telemetry, zero metadata sent over the network.</p>
+        </div>
+        <div class="card" style="background:#1C1C1F;color:#fff;border-color:#FFE14D;box-shadow:5px 5px 0 #FFE14D">
+          <h3>Known limitation</h3>
+          <p style="color:#ddd">Files exclusively locked by another application cannot be moved until closed. They are logged and safely left alone.</p>
+        </div>
+      </div>
+      <p style="margin:24px 0 0">
+        <a href="https://github.com/mohdyasir5155/CleanDownloads/blob/main/SECURITY.md" target="_blank" rel="noopener noreferrer" style="color:#D4FF3F;font-weight:700;text-decoration:underline">Read SECURITY.md on GitHub →</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- Configuration -->
+  <section id="config" class="sec">
+    <h2 class="h2">Make it yours.</h2>
+    <p class="sub">Settings live in <code>%LOCALAPPDATA%\CleanDownloads\config.json</code>.</p>
+    <div class="card" style="margin-top:36px;padding:6px 0">
+      <div class="row"><code>downloads_dir</code><span>Folder to clean. Default: your Windows Downloads directory.</span></div>
+      <div class="row"><code>recursive</code><span>Scan subfolders? Default: false (root level only).</span></div>
+      <div class="row"><code>conflict_strategy</code><span>"rename" adds (1), (2) automatically on duplicates.</span></div>
+      <div class="row"><code>ignored_extensions</code><span>In-progress types (.crdownload, .tmp, .part) to always skip.</span></div>
+      <div class="row"><code>excluded_directories</code><span>Category folders ignored during the root scan.</span></div>
+      <div class="row"><code>default_fallback_folder</code><span>Where unknown extensions go. Default: "Other".</span></div>
+    </div>
+  </section>
+
+  <!-- Install Options -->
+  <section id="install" class="sec">
+    <h2 class="h2">Pick your install.</h2>
+    <div class="g" style="grid-template-columns:repeat(auto-fit,minmax(250px,1fr))">
+      <div class="card" style="background:#D4FF3F">
+        <span class="chip">Recommended</span>
+        <h3>PowerShell</h3>
+        <p>One line. Installs to <code>%LOCALAPPDATA%\Programs\CleanDownloads</code> and adds it to your user PATH.</p>
+      </div>
+      <div class="card">
+        <span class="chip">Installer</span>
+        <h3>Setup .exe</h3>
+        <p>Grab <code>CleanDownloads-Setup-1.0.0.exe</code> and <code>checksums.txt</code> from Releases. Verify with <code>Get-FileHash</code>, then run it. Silent mode works too.</p>
+      </div>
+      <div class="card">
+        <span class="chip">Portable</span>
+        <h3>Single binary</h3>
+        <p>Download <code>cleandownloads.exe</code>, put it anywhere on your PATH, done.</p>
+      </div>
+      <div class="card" style="background:#EDE6FF">
+        <span class="chip" style="background:#FFE14D">Coming soon</span>
+        <h3>WinGet</h3>
+        <p><code>winget install CleanDownloads.CleanDownloads</code> goes live once the manifest is merged into microsoft/winget-pkgs.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Roadmap -->
+  <section id="roadmap" class="sec">
+    <h2 class="h2">What's next.</h2>
+    <div class="g" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
+      <div class="card" style="background:#D4FF3F">
+        <span class="chip">v1.0.0 · shipped</span>
+        <p style="margin-top:10px">Classification engine, collision-safe moves, SQLite history and undo, Task Scheduler, installer and bootstrapper.</p>
+      </div>
+      <div class="card">
+        <span class="chip">v1.1.0</span>
+        <p style="margin-top:10px">File-age rules, like only organize files older than 3 days.</p>
+      </div>
+      <div class="card">
+        <span class="chip">v1.2.0</span>
+        <p style="margin-top:10px">Desktop tray app (Tauri + React preview).</p>
+      </div>
+      <div class="card">
+        <span class="chip">v1.3.0</span>
+        <p style="margin-top:10px">Custom regex tag and project rules.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Maker & Community -->
+  <section id="maker" class="sec">
+    <h2 class="h2">Who made this.</h2>
+    <div class="card" style="margin-top:36px;background:#C9B6FF;display:flex;flex-wrap:wrap;gap:28px;align-items:center;box-shadow:8px 8px 0 #111">
+      <div class="av" style="width:96px;height:96px;border:2.5px solid #111;border-radius:50%;background:#FF8FD0;display:flex;align-items:center;justify-content:center;font:800 34px 'Bricolage Grotesque',sans-serif">MY</div>
+      <div style="flex:1 1 320px">
+        <div style="font:800 28px 'Bricolage Grotesque',sans-serif">mohdyasir5155</div>
+        <p style="margin:6px 0 14px;font-size:16px;color:#111">
+          Maker and maintainer of CleanDownloads, with open-source contributors. Python and PowerShell, released under the MIT license.
+        </p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <span class="chip">automation</span>
+          <span class="chip">cli</span>
+          <span class="chip">downloads-organizer</span>
+          <span class="chip">file-organizer</span>
+          <span class="chip">open-source</span>
+          <span class="chip">powershell</span>
+          <span class="chip">productivity</span>
+          <span class="chip">python</span>
+          <span class="chip">windows</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <a class="btn" href="https://github.com/mohdyasir5155" target="_blank" rel="noopener noreferrer" style="background:#fff;text-align:center">GitHub profile</a>
+        <a class="btn" href="https://github.com/mohdyasir5155/CleanDownloads/issues" target="_blank" rel="noopener noreferrer" style="background:#fff;text-align:center">Report an issue</a>
+      </div>
+    </div>
+
+    <div class="g" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+      <div class="card">
+        <h3>Want to contribute?</h3>
+        <p>Fork, set up a venv, run <code>pip install -e ".[dev]"</code>, then <code>pytest -v</code>, <code>ruff check .</code> and <code>bandit -r src/ -ll</code>. Open a PR. New classification rules are welcome.</p>
+      </div>
+      <div class="card">
+        <h3>Read the house rules</h3>
+        <p>
+          <a href="https://github.com/mohdyasir5155/CleanDownloads/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer" style="text-decoration:underline">Contributing</a> · 
+          <a href="https://github.com/mohdyasir5155/CleanDownloads/blob/main/CODE_OF_CONDUCT.md" target="_blank" rel="noopener noreferrer" style="text-decoration:underline">Code of conduct</a> · 
+          <a href="https://github.com/mohdyasir5155/CleanDownloads/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" style="text-decoration:underline">MIT license</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Reverse Marquee -->
+  <div class="mq rev" style="margin-top:80px;">
+    <div>
+      <span>CLEAN ONCE</span><span>•</span>
+      <span>STAY CLEAN</span><span>•</span>
+      <span>ONE COMMAND</span><span>•</span>
+      <span>ZERO CLUTTER</span><span>•</span>
+      <span>NO ADMIN RIGHTS</span><span>•</span>
+      <span>CLEAN ONCE</span><span>•</span>
+      <span>STAY CLEAN</span><span>•</span>
+      <span>ONE COMMAND</span><span>•</span>
+      <span>ZERO CLUTTER</span><span>•</span>
+      <span>NO ADMIN RIGHTS</span><span>•</span>
+    </div>
+  </div>
+
+  <!-- Bottom CTA -->
+  <section class="sec" style="padding-bottom:0">
+    <div class="card" style="background:#D4FF3F;text-align:center;padding:56px 24px;box-shadow:8px 8px 0 #111">
+      <h2 class="h2">Clean once. Stay clean.</h2>
+      <div style="margin-top:28px;display:flex;flex-wrap:wrap;justify-content:center;gap:14px">
+        <a class="btn" href="https://github.com/mohdyasir5155/CleanDownloads/releases/latest" target="_blank" rel="noopener noreferrer" style="background:#111;color:#fff;box-shadow:4px 4px 0 #fff">Download v1.0.0</a>
+        <a class="btn" href="https://github.com/mohdyasir5155/CleanDownloads" target="_blank" rel="noopener noreferrer" style="background:#fff">Star on GitHub ⭐</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="sec" style="padding-top:36px;padding-bottom:48px;">
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;font-size:14.5px;">
+      <div>MIT License · Made with pride by <a href="https://github.com/mohdyasir5155" target="_blank" rel="noopener noreferrer" style="text-decoration:underline;font-weight:600">mohdyasir5155</a> &amp; contributors</div>
+      <div style="display:flex;flex-wrap:wrap;gap:20px">
+        <a href="https://github.com/mohdyasir5155/CleanDownloads/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer" style="text-decoration:underline">Changelog</a>
+        <a href="https://github.com/mohdyasir5155/CleanDownloads/blob/main/SECURITY.md" target="_blank" rel="noopener noreferrer" style="text-decoration:underline">Security</a>
+        <a href="https://github.com/mohdyasir5155/CleanDownloads" target="_blank" rel="noopener noreferrer" style="text-decoration:underline">Repository</a>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- Interactive Client-side Scripting -->
+<script>
+  // 1. One-click PowerShell snippet copy
+  const copyBtn = document.getElementById('copyBtn');
+  const cmdSnippet = document.getElementById('cmdSnippet');
+  const installCmd = "irm https://raw.githubusercontent.com/mohdyasir5155/CleanDownloads/main/install.ps1 | iex";
+
+  if (copyBtn && cmdSnippet) {
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(installCmd);
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = 'Copied! ✓';
+        copyBtn.style.backgroundColor = '#8FD3FF';
+        setTimeout(() => {
+          copyBtn.textContent = originalText;
+          copyBtn.style.backgroundColor = '#D4FF3F';
+        }, 2200);
+      } catch (err) {
+        // Fallback
+        const textarea = document.createElement('textarea');
+        textarea.value = installCmd;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        copyBtn.textContent = 'Copied! ✓';
+        setTimeout(() => { copyBtn.textContent = 'Copy'; }, 2200);
+      }
+    });
+  }
+
+  // 2. Interactive Terminal Simulator
+  const termOutputs = {
+    preview: `<span style="color:#D4FF3F">PS&gt;</span> cleandownloads preview
+invoice_october.pdf     → Documents/PDF
+screenshot_01.png       → Images/PNG
+project_backup.zip      → Archives/ZIP
+vscode_setup.exe        → Software/EXE
+automation_script.py    → Code/Python
+
+<span style="color:#8FD3FF">Plan generated:</span> 5 files to sort. 0 collisions.
+<span style="color:#888">[Run 'cleandownloads organize' to apply]</span><span class="cd-caret"></span>`,
+
+    organize: `<span style="color:#D4FF3F">PS&gt;</span> cleandownloads organize
+[1/5] Moving invoice_october.pdf     → Documents/PDF/
+[2/5] Moving screenshot_01.png       → Images/PNG/
+[3/5] Moving project_backup.zip      → Archives/ZIP/
+[4/5] Moving vscode_setup.exe        → Software/EXE/
+[5/5] Moving automation_script.py    → Code/Python/
+
+<span style="color:#D4FF3F;font-weight:700">Done.</span> Sorted 5 files in 0.08s.
+<span style="color:#D4FF3F">Nothing overwritten. Nothing deleted. Recorded in history.db</span><span class="cd-caret"></span>`,
+
+    undo: `<span style="color:#D4FF3F">PS&gt;</span> cleandownloads undo
+Batch #4: Restoring 5 files...
+[✓] SHA-256 verified for invoice_october.pdf
+[✓] SHA-256 verified for screenshot_01.png
+[✓] SHA-256 verified for project_backup.zip
+[✓] SHA-256 verified for vscode_setup.exe
+[✓] SHA-256 verified for automation_script.py
+
+<span style="color:#D4FF3F;font-weight:700">Undo complete.</span> 5 files returned to Downloads root.<span class="cd-caret"></span>`
+  };
+
+  const termButtons = document.querySelectorAll('.term-btn');
+  const termDisplay = document.getElementById('terminalOutput');
+
+  termButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      termButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const cmd = btn.getAttribute('data-cmd');
+      if (termOutputs[cmd] && termDisplay) {
+        termDisplay.innerHTML = termOutputs[cmd];
+      }
+    });
+  });
+
+  // 3. Scroll Progress Indicator
+  const progressBar = document.getElementById('progressBar');
+  window.addEventListener('scroll', () => {
+    const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+    if (totalHeight > 0 && progressBar) {
+      const progress = window.scrollY / totalHeight;
+      progressBar.style.transform = `scaleX(${progress})`;
+    }
+  }, { passive: true });
+
+  // 4. Responsive Mobile Navigation Menu
+  const navToggle = document.getElementById('navToggle');
+  const siteNav = document.getElementById('siteNav');
+  if (navToggle && siteNav) {
+    navToggle.addEventListener('click', () => {
+      const isOpen = siteNav.classList.toggle('open');
+      navToggle.setAttribute('aria-expanded', isOpen);
+      navToggle.textContent = isOpen ? 'Close ✕' : 'Menu ☰';
+    });
+
+    siteNav.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        siteNav.classList.remove('open');
+        navToggle.setAttribute('aria-expanded', 'false');
+        navToggle.textContent = 'Menu ☰';
+      });
+    });
+  }
+</script>
+
+</body>
+</html>

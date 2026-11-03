@@ -86,3 +86,6 @@ $RECYCLE.BIN/
 # Inno Setup Temporary Build Files
 installer/Output/
 _ISTMP/
+
+# Firebase Hosting
+.firebase/

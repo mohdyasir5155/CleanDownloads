@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "portfolio-43661"
+  },
+  "targets": {
+    "portfolio-43661": {
+      "hosting": {
+        "cleanyourdownloads": [
+          "cleanyourdownloads"
+        ]
+      }
+    }
+  }
+}
