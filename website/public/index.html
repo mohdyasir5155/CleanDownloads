@@ -61,46 +61,68 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
-    body { margin: 0; padding: 0; background: #FFF6E5; color: #111; font: 400 17px/1.55 Inter, system-ui, -apple-system, sans-serif; overflow-x: hidden; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #FFF6E5;
+      color: #111;
+      font: 400 16.5px/1.55 Inter, system-ui, -apple-system, sans-serif;
+      overflow-x: hidden;
+    }
     a { color: #111; text-decoration: none; }
     a:focus-visible, button:focus-visible { outline: 3px solid #111; outline-offset: 3px; }
 
     .pg { background: #FFF6E5; color: #111; min-height: 100vh; }
-    .sec { max-width: 1200px; margin: 0 auto; padding: 80px 24px 0; }
-    .h2 { margin: 0; font: 800 clamp(32px, 5vw, 54px)/1.05 'Bricolage Grotesque', sans-serif; letter-spacing: -0.03em; }
-    .sub { margin: 14px 0 0; font-size: 19px; color: #2A2A2A; max-width: 660px; line-height: 1.5; }
-    .g { margin-top: 36px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+    .sec { max-width: 1180px; margin: 0 auto; padding: 56px 24px 0; }
+    .h2 {
+      margin: 0;
+      font: 800 clamp(28px, 3.6vw, 42px)/1.1 'Bricolage Grotesque', sans-serif;
+      letter-spacing: -0.03em;
+    }
+    .sub {
+      margin: 10px 0 0;
+      font-size: 16.5px;
+      color: #2A2A2A;
+      max-width: 580px;
+      line-height: 1.5;
+    }
+    .g {
+      margin-top: 32px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 18px;
+    }
 
     /* Neobrutalist Cards */
     .card {
       border: 2.5px solid #111;
-      border-radius: 20px;
+      border-radius: 18px;
       background: #fff;
-      padding: 24px;
-      box-shadow: 5px 5px 0 #111;
+      padding: 22px;
+      box-shadow: 4.5px 4.5px 0 #111;
       transition: transform .2s ease, box-shadow .2s ease;
     }
     .card:hover {
-      transform: translate(-3px, -3px) rotate(-0.4deg);
-      box-shadow: 8px 8px 0 #111;
+      transform: translate(-3px, -3px) rotate(-0.3deg);
+      box-shadow: 7px 7px 0 #111;
     }
-    .card h3 { margin: 12px 0 6px; font: 800 21px/1.2 'Bricolage Grotesque', sans-serif; }
-    .card p { margin: 0; font-size: 15.5px; color: #2A2A2A; }
+    .card h3 { margin: 10px 0 6px; font: 800 20px/1.2 'Bricolage Grotesque', sans-serif; }
+    .card p { margin: 0; font-size: 15px; color: #2A2A2A; }
 
     /* Icons */
     .ic {
-      width: 46px;
-      height: 46px;
+      width: 42px;
+      height: 42px;
       border: 2.5px solid #111;
-      border-radius: 14px;
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
     }
     .ic svg {
-      width: 24px;
-      height: 24px;
+      width: 22px;
+      height: 22px;
       stroke: #111;
       fill: none;
       stroke-width: 2.2;
@@ -115,17 +137,17 @@
       justify-content: center;
       border: 2.5px solid #111;
       border-radius: 999px;
-      padding: 13px 24px;
-      min-height: 48px;
+      padding: 11px 22px;
+      min-height: 42px;
       font-weight: 700;
-      font-size: 16px;
+      font-size: 15px;
       cursor: pointer;
-      box-shadow: 4px 4px 0 #111;
+      box-shadow: 3.5px 3.5px 0 #111;
       transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease;
     }
     .btn:hover {
       transform: translate(-2px, -2px);
-      box-shadow: 6px 6px 0 #111;
+      box-shadow: 5.5px 5.5px 0 #111;
     }
     .btn:active {
       transform: translate(2px, 2px);
@@ -137,8 +159,8 @@
       display: inline-block;
       border: 2px solid #111;
       border-radius: 999px;
-      padding: 6px 14px;
-      font: 600 14px 'JetBrains Mono', monospace;
+      padding: 5px 13px;
+      font: 600 13px 'JetBrains Mono', monospace;
       background: #fff;
       transition: transform .15s ease;
     }
@@ -159,21 +181,22 @@
     .stk {
       position: absolute;
       border: 2.5px solid #111;
-      border-radius: 14px;
-      padding: 8px 14px;
-      font: 800 14.5px 'Bricolage Grotesque', sans-serif;
+      border-radius: 12px;
+      padding: 6px 12px;
+      font: 800 13px 'Bricolage Grotesque', sans-serif;
       box-shadow: 3px 3px 0 #111;
       animation: cd-wig 3.5s ease-in-out infinite;
       user-select: none;
+      z-index: 3;
     }
 
     /* Tables & Rows */
     .row {
       display: grid;
-      grid-template-columns: minmax(180px, 250px) 1fr;
+      grid-template-columns: minmax(170px, 240px) 1fr;
       gap: 16px;
       align-items: center;
-      padding: 14px 20px;
+      padding: 13px 18px;
       border-bottom: 2px dashed #111;
     }
     .row:last-child { border-bottom: 0; }
@@ -192,8 +215,8 @@
       animation: cd-mq 65s linear infinite;
     }
     .mq span {
-      padding: 11px 28px;
-      font: 700 14px 'JetBrains Mono', monospace;
+      padding: 10px 24px;
+      font: 700 13.5px 'JetBrains Mono', monospace;
       white-space: nowrap;
       letter-spacing: 0.04em;
     }
@@ -210,15 +233,15 @@
 
     /* Keyframes */
     @keyframes cd-mq { to { transform: translateX(-50%); } }
-    @keyframes cd-wig { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(3deg) translateY(-4px); } }
+    @keyframes cd-wig { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg) translateY(-3px); } }
     @keyframes cd-wig2 { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg) scale(1.02); } }
     @keyframes cd-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
-    @keyframes cd-drift { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(16px, -18px); } }
+    @keyframes cd-drift { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(12px, -14px); } }
     @keyframes cd-spin2 { to { transform: rotate(360deg); } }
-    @keyframes cd-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    @keyframes cd-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
     @keyframes cd-ring {
-      0%, 100% { box-shadow: 4px 4px 0 #111, 0 0 0 0 rgba(212, 255, 63, .9); }
-      50% { box-shadow: 4px 4px 0 #111, 0 0 0 14px rgba(212, 255, 63, 0); }
+      0%, 100% { box-shadow: 3.5px 3.5px 0 #111, 0 0 0 0 rgba(212, 255, 63, .9); }
+      50% { box-shadow: 3.5px 3.5px 0 #111, 0 0 0 12px rgba(212, 255, 63, 0); }
     }
     @keyframes cd-prog { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
@@ -228,7 +251,7 @@
       top: 0;
       left: 0;
       right: 0;
-      height: 6px;
+      height: 5px;
       background: #FF3EA5;
       border-bottom: 2px solid #111;
       transform-origin: left;
@@ -236,52 +259,139 @@
       transform: scaleX(0);
     }
 
-    /* Hero decorations */
+    /* Hero section & components */
     #top { position: relative; }
     #top > div { position: relative; z-index: 1; }
+    
+    /* Tasteful, unobtrusive decorative elements */
     #top::before {
       content: "";
       position: absolute;
       z-index: 0;
-      width: 70px;
-      height: 70px;
-      border: 2.5px solid #111;
+      width: 32px;
+      height: 32px;
+      border: 2px solid #111;
       border-radius: 50%;
       background: #FF8FD0;
-      right: 48%;
-      top: 18px;
-      animation: cd-drift 9s ease-in-out infinite;
+      left: -12px;
+      top: -6px;
+      pointer-events: none;
+      animation: cd-drift 8s ease-in-out infinite;
     }
     #top::after {
       content: "";
       position: absolute;
       z-index: 0;
-      width: 54px;
-      height: 54px;
-      border: 2.5px solid #111;
-      border-radius: 14px;
+      width: 28px;
+      height: 28px;
+      border: 2px solid #111;
+      border-radius: 8px;
       background: #8FD3FF;
-      left: 46%;
-      bottom: 6px;
-      animation: cd-spin2 14s linear infinite;
+      right: -10px;
+      bottom: 14px;
+      pointer-events: none;
+      animation: cd-spin2 12s linear infinite;
     }
-    #top h1 span {
+
+    /* Hero Headline */
+    .hero-h1 {
+      margin: 14px 0 0;
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.08;
+      max-width: 560px;
+      font-size: clamp(34px, 4.2vw, 56px);
+    }
+    @media (min-width: 1400px) {
+      .hero-h1 { font-size: 58px; max-width: 590px; }
+    }
+    @media (max-width: 1024px) {
+      .hero-h1 { font-size: clamp(32px, 4.5vw, 48px); max-width: 100%; }
+    }
+    @media (max-width: 480px) {
+      .hero-h1 { font-size: 31px; line-height: 1.12; }
+    }
+
+    .hero-h1 span.hl {
       display: inline-block;
+      background: #D4FF3F;
+      padding: 1px 8px;
+      border-radius: 10px;
+      border: 2.5px solid #111;
+      box-shadow: 2px 2px 0 #111;
+      white-space: nowrap;
       animation: cd-wig2 4s ease-in-out 1s infinite;
     }
+
     #top .btn-hero {
       background: #D4FF3F;
       animation: cd-ring 2.4s ease-out 1.5s infinite;
     }
     #top .btn-hero:hover { animation: none; }
+
     .cd-caret {
       display: inline-block;
       width: 8px;
-      height: 15px;
+      height: 14px;
       background: #D4FF3F;
       vertical-align: -2px;
       margin-left: 4px;
       animation: cd-blink 1s steps(1) infinite;
+    }
+    #cmdSnippet {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    #cmdSnippet::-webkit-scrollbar {
+      display: none;
+    }
+    pre::-webkit-scrollbar {
+      height: 4px;
+      background: #1C1C20;
+    }
+    pre::-webkit-scrollbar-thumb {
+      background: #3A3A40;
+      border-radius: 4px;
+    }
+
+    /* Terminal Preview Component */
+    .hero-term-col {
+      flex: 1 1 380px;
+      max-width: 440px;
+      min-width: 290px;
+      position: relative;
+      padding: 12px 0;
+    }
+    .hero-term {
+      background: #0E0E10;
+      border: 2.5px solid #111;
+      border-radius: 16px;
+      box-shadow: 6px 6px 0 #C9B6FF;
+      overflow: hidden;
+    }
+    .hero-term-bar {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 13px;
+      background: #1C1C20;
+      border-bottom: 1.5px solid #333;
+    }
+    .hero-term pre {
+      margin: 0;
+      padding: 16px 16px;
+      font: 400 12px/1.65 'JetBrains Mono', monospace;
+      color: #E8E8E8;
+      overflow-x: auto;
+    }
+    @media (max-width: 480px) {
+      .hero-term pre {
+        padding: 13px 12px;
+        font-size: 11.5px;
+        line-height: 1.6;
+      }
     }
 
     /* Terminal Switcher Buttons */
@@ -290,8 +400,8 @@
       color: #bbb;
       border: 1px solid #444;
       border-radius: 6px;
-      padding: 4px 10px;
-      font: 600 12px 'JetBrains Mono', monospace;
+      padding: 3px 9px;
+      font: 600 11.5px 'JetBrains Mono', monospace;
       cursor: pointer;
       transition: all .15s ease;
     }
@@ -301,15 +411,32 @@
       border-color: #D4FF3F;
     }
 
+    /* Terminal Stickers */
+    .hero-stk-top {
+      top: -10px;
+      right: 12px;
+      background: #FFE14D;
+    }
+    .hero-stk-btm {
+      bottom: -10px;
+      left: 12px;
+      background: #8FD3FF;
+      animation-delay: -1.5s;
+    }
+    @media (max-width: 480px) {
+      .hero-stk-top { top: -8px; right: 6px; font-size: 11.5px; padding: 4px 8px; }
+      .hero-stk-btm { bottom: -8px; left: 6px; font-size: 11.5px; padding: 4px 8px; }
+    }
+
     /* Mobile Navigation */
     .nav-toggle {
       display: none;
       background: #fff;
       border: 2.5px solid #111;
       border-radius: 10px;
-      padding: 8px 12px;
+      padding: 7px 12px;
       cursor: pointer;
-      font: 700 18px 'Bricolage Grotesque', sans-serif;
+      font: 700 16px 'Bricolage Grotesque', sans-serif;
       box-shadow: 3px 3px 0 #111;
     }
     @media (max-width: 860px) {
@@ -317,16 +444,16 @@
       .site-nav {
         display: none !important;
         position: absolute;
-        top: 80px;
+        top: 70px;
         left: 20px;
         right: 20px;
         background: #FFF6E5;
         border: 2.5px solid #111;
         border-radius: 18px;
         box-shadow: 6px 6px 0 #111;
-        padding: 24px;
+        padding: 22px;
         flex-direction: column;
-        gap: 16px;
+        gap: 14px;
         z-index: 99;
       }
       .site-nav.open { display: flex !important; }
@@ -370,10 +497,10 @@
   </div>
 
   <!-- Site Navigation -->
-  <header class="sec" style="padding-top:20px;position:relative;">
+  <header class="sec" style="padding-top:14px;padding-bottom:6px;position:relative;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
-      <a href="#top" style="display:flex;align-items:center;gap:10px;font:800 22px 'Bricolage Grotesque',sans-serif;" aria-label="CleanDownloads Home">
-        <span class="ic" style="background:#D4FF3F;width:40px;height:40px">
+      <a href="#top" style="display:flex;align-items:center;gap:10px;font:800 21px 'Bricolage Grotesque',sans-serif;" aria-label="CleanDownloads Home">
+        <span class="ic" style="background:#D4FF3F;width:38px;height:38px">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
             <path d="m9 13 2 2 4-4"></path>
@@ -384,7 +511,7 @@
 
       <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation menu" aria-expanded="false">Menu ☰</button>
 
-      <nav class="site-nav" id="siteNav" style="display:flex;flex-wrap:wrap;gap:20px;align-items:center;font-weight:600;font-size:15px">
+      <nav class="site-nav" id="siteNav" style="display:flex;flex-wrap:wrap;gap:18px;align-items:center;font-weight:600;font-size:14.5px">
         <a href="#what">What it does</a>
         <a href="#demo">Demo</a>
         <a href="#compare">Compare</a>
@@ -393,65 +520,68 @@
         <a href="#safety">Safety</a>
         <a href="#install">Install</a>
         <a href="#maker">Maker</a>
-        <a class="btn" href="https://github.com/mohdyasir5155/CleanDownloads" target="_blank" rel="noopener noreferrer" style="background:#111;color:#fff;padding:9px 18px;min-height:auto;box-shadow:3px 3px 0 #D4FF3F">GitHub ⭐</a>
+        <a class="btn" href="https://github.com/mohdyasir5155/CleanDownloads" target="_blank" rel="noopener noreferrer" style="background:#111;color:#fff;padding:8px 16px;min-height:auto;font-size:14px;box-shadow:3px 3px 0 #D4FF3F">GitHub ⭐</a>
       </nav>
     </div>
   </header>
 
-  <!-- Hero Section -->
-  <section id="top" class="sec" style="padding-top:56px;">
-    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:56px">
-      <div style="flex:1 1 460px;min-width:0">
-        <span class="chip" style="background:#FF8FD0">v1.0.0 · Windows 10 | 11 · MIT</span>
-        <h1 style="margin:20px 0 0;font:800 clamp(44px,7vw,84px)/0.98 'Bricolage Grotesque',sans-serif;letter-spacing:-0.04em">
-          Your Downloads folder is <span style="background:#D4FF3F;padding:0 10px;border-radius:12px;border:2.5px solid #111">chaos.</span> Fix it in one command.
+  <!-- Hero Section (Optimized Proportions & Balanced Viewport Fit) -->
+  <section id="top" class="sec" style="padding-top:24px;">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:36px">
+      <!-- Left Column: Value Proposition -->
+      <div style="flex:1 1 440px;max-width:580px;min-width:290px">
+        <span class="chip" style="background:#FF8FD0;font-size:12px;padding:4px 11px;">v1.0.0 · Windows 10 | 11 · MIT</span>
+        
+        <h1 class="hero-h1">
+          Your Downloads folder is <span class="hl">chaos.</span> Fix it in one command.
         </h1>
-        <p class="sub" style="font-size:21px">
-          CleanDownloads sorts your messy Windows Downloads into tidy folders. It shows you the plan first, never deletes anything, and you can undo it in one go.
+        
+        <p class="sub" style="margin-top:10px;font-size:clamp(15.5px, 1.2vw, 17.5px);line-height:1.45;color:#2A2A2A;max-width:490px">
+          CleanDownloads sorts your messy Downloads into tidy folders. It shows you the plan first, never deletes anything, and you can undo it in one go.
         </p>
         
-        <div style="margin-top:28px;display:flex;flex-wrap:wrap;gap:14px">
+        <div style="margin-top:18px;display:flex;flex-wrap:wrap;gap:12px">
           <a class="btn btn-hero" href="https://github.com/mohdyasir5155/CleanDownloads/releases/latest" target="_blank" rel="noopener noreferrer">Download for Windows</a>
           <a class="btn" href="https://github.com/mohdyasir5155/CleanDownloads" target="_blank" rel="noopener noreferrer" style="background:#fff">View source</a>
         </div>
 
         <!-- One-Liner PowerShell Snippet -->
-        <div style="margin-top:26px;background:#111;border:2px solid #333;border-radius:16px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:600px;box-shadow:4px 4px 0 #111;">
-          <code id="cmdSnippet" style="background:none;color:#D4FF3F;font-size:13px;overflow-x:auto;white-space:nowrap;padding:0;border:0;">irm https://raw.githubusercontent.com/mohdyasir5155/CleanDownloads/main/install.ps1 | iex</code>
-          <button id="copyBtn" aria-label="Copy install command" style="flex:none;background:#D4FF3F;color:#111;border:0;border-radius:10px;padding:10px 16px;font:700 13px Inter,sans-serif;cursor:pointer;transition:transform 0.15s ease, background-color 0.2s ease;">Copy</button>
+        <div style="margin-top:16px;background:#111;border:2px solid #282828;border-radius:13px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;max-width:490px;box-shadow:3px 3px 0 #111;">
+          <code id="cmdSnippet" style="background:none;color:#D4FF3F;font-size:12px;overflow-x:auto;white-space:nowrap;padding:0;border:0;">irm https://raw.githubusercontent.com/mohdyasir5155/CleanDownloads/main/install.ps1 | iex</code>
+          <button id="copyBtn" aria-label="Copy install command" style="flex:none;background:#D4FF3F;color:#111;border:0;border-radius:8px;padding:7px 12px;font:700 12px Inter,sans-serif;cursor:pointer;transition:transform 0.15s ease, background-color 0.2s ease;">Copy</button>
         </div>
-        <p style="margin:10px 0 0;font-size:14px;color:#2A2A2A">Paste into PowerShell. No admin rights. 5 seconds.</p>
+        <p style="margin:6px 0 0;font-size:12.5px;color:#555">Paste into PowerShell. No admin rights. 5 seconds.</p>
       </div>
 
-      <!-- Interactive Terminal Card -->
-      <div style="flex:1 1 440px;min-width:0;position:relative;padding:20px 0">
-        <span class="stk" style="top:-6px;right:12px;background:#FFE14D;z-index:2">no cap: nothing gets deleted</span>
-        <span class="stk" style="bottom:-6px;left:8px;background:#8FD3FF;z-index:2;animation-delay:-1.5s">undo = one command</span>
+      <!-- Right Column: Interactive Terminal Preview -->
+      <div class="hero-term-col">
+        <span class="stk hero-stk-top">no cap: nothing gets deleted</span>
+        <span class="stk hero-stk-btm">undo = one command</span>
 
-        <div style="background:#0E0E10;border:2.5px solid #111;border-radius:20px;box-shadow:8px 8px 0 #C9B6FF;overflow:hidden">
-          <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;padding:12px 16px;background:#222;border-bottom:1px solid #333;">
-            <div style="display:flex;gap:8px;align-items:center;">
-              <span style="width:12px;height:12px;border-radius:50%;background:#FF8FD0"></span>
-              <span style="width:12px;height:12px;border-radius:50%;background:#FFE14D"></span>
-              <span style="width:12px;height:12px;border-radius:50%;background:#D4FF3F"></span>
-              <span style="margin-left:8px;font:400 12px 'JetBrains Mono',monospace;color:#ccc">PowerShell</span>
+        <div class="hero-term">
+          <div class="hero-term-bar">
+            <div style="display:flex;gap:5px;align-items:center;">
+              <span style="width:10px;height:10px;border-radius:50%;background:#FF8FD0"></span>
+              <span style="width:10px;height:10px;border-radius:50%;background:#FFE14D"></span>
+              <span style="width:10px;height:10px;border-radius:50%;background:#D4FF3F"></span>
+              <span style="margin-left:6px;font:400 11px 'JetBrains Mono',monospace;color:#ccc">PowerShell</span>
             </div>
-            <!-- Clickable Interactive Tabs -->
-            <div style="display:flex;gap:6px;">
+            <!-- Interactive Tabs -->
+            <div style="display:flex;gap:5px;">
               <button class="term-btn active" data-cmd="preview" aria-label="Preview terminal tab">preview</button>
               <button class="term-btn" data-cmd="organize" aria-label="Organize terminal tab">organize</button>
               <button class="term-btn" data-cmd="undo" aria-label="Undo terminal tab">undo</button>
             </div>
           </div>
           
-          <pre id="terminalOutput" style="margin:0;padding:22px 20px;font:400 13.5px/1.75 'JetBrains Mono',monospace;color:#E8E8E8;overflow-x:auto"><span style="color:#D4FF3F">PS&gt;</span> cleandownloads preview
+          <pre id="terminalOutput"><span style="color:#D4FF3F">PS&gt;</span> cleandownloads preview
 invoice_october.pdf     → Documents/PDF
 screenshot_01.png       → Images/PNG
 project_backup.zip      → Archives/ZIP
 vscode_setup.exe        → Software/EXE
 automation_script.py    → Code/Python
 
-<span style="color:#8FD3FF">Plan generated:</span> 5 files to sort. 0 collisions.
+<span style="color:#8FD3FF">Plan:</span> 5 files to sort. 0 collisions.
 <span style="color:#888">[Run 'cleandownloads organize' to apply]</span><span class="cd-caret"></span></pre>
         </div>
       </div>
